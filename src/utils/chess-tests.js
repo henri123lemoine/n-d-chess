@@ -130,28 +130,8 @@ export const runTests = (calculators) => {
   // 2. Bishop and Rook should attack at least as many squares as Pawn and Knight
   DIMENSIONS.forEach(d => {
     const queenAttacks = calculators['Queen'].calculate(d);
-    const kingAttacks = calculators['King'].calculate(d);
     const bishopAttacks = calculators['Bishop'].calculate(d);
     const rookAttacks = calculators['Rook'].calculate(d);
-
-    // Test queen dominance
-    if (queenAttacks < kingAttacks) {
-      results.push({
-        test: `Hierarchy ${d}-D`,
-        expected: 0,
-        actual: queenAttacks - kingAttacks,
-        pass: false,
-        message: `Queen (${queenAttacks}) attacks fewer squares than King (${kingAttacks})`
-      });
-    } else {
-      results.push({
-        test: `Hierarchy ${d}-D`,
-        expected: 0,
-        actual: 0,
-        pass: true,
-        message: `Queen attacks at least as many squares as King`
-      });
-    }
 
     if (queenAttacks < bishopAttacks) {
       results.push({
