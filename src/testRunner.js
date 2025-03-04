@@ -1,6 +1,6 @@
 // testRunner.js using ES modules
 import { getPieceInfo } from './utils/calculator.js';
-import { runTests, allTestsPass } from './utils/chess-tests.js';
+import { runTests } from './utils/chess-tests.js';
 
 // Run tests for all pieces
 const runAllTests = () => {

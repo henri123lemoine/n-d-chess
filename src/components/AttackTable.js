@@ -67,11 +67,11 @@ const AttackTable = () => {
       <div className="formulas-container">
         {CHESS_PIECES.map(piece => {
           const pieceInfo = getPieceInfo(piece);
-          return pieceInfo ? (
+          return pieceInfo.calculate.formula ? (
             <div className="formula" key={piece}>
               <h3>{piece}</h3>
               <p>
-                {pieceInfo.formula}
+                {pieceInfo.calculate.formula}
               </p>
             </div>
           ) : null;

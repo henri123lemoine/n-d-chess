@@ -24,6 +24,7 @@ export const calculateKnightAttacks = (dimension) => {
   // Thus, the formula is 4 * d * (d-1)
   return 4 * dimension * (dimension - 1);
 };
+calculateKnightAttacks.formula = '4d(d-1)';
 
 /**
  * Calculate the maximum number of squares a rook can attack in n dimensions
@@ -39,6 +40,7 @@ export const calculateRookAttacks = (dimension) => {
   // Total: dimension * (SIDE_LENGTH - 1)
   return dimension * (SIDE_LENGTH - 1);
 };
+calculateRookAttacks.formula = 'd(l-1)';
 
 /**
  * Calculate the maximum number of squares a bishop can attack in n dimensions
@@ -85,6 +87,11 @@ export const calculateBishopAttacks = (dimension) => {
     return total;
   }
 };
+if (VERSION === 'Henri') {
+  calculateBishopAttacks.formula = '(d choose 2)(2l-3)';
+} else {
+  calculateBishopAttacks.formula = 'sum(r=2 to d)[C(d, r)(3*2^r+1)]';
+}
 
 /**
  * Calculate the maximum number of squares a queen can attack in n dimensions
@@ -99,6 +106,11 @@ export const calculateQueenAttacks = (dimension) => {
   // Bishop moves: combinatorial(dimension, 2) * (2*SIDE_LENGTH - 3)
   return calculateRookAttacks(dimension) + calculateBishopAttacks(dimension);
 };
+if (VERSION === 'Henri') {
+  calculateQueenAttacks.formula = 'd(l-1)+(d choose 2)(2l-3)';
+} else {
+  calculateQueenAttacks.formula = 'd(l-1)+sum(r=2 to d)[C(d, r)(3*2^r+1)]';
+}
 
 /**
  * Calculate the maximum number of squares a king can attack in n dimensions
@@ -112,6 +124,7 @@ export const calculateKingAttacks = (dimension) => {
   // Total moves = 3^dimension - 1 (all combinations of -1, 0, 1 excluding the zero vector).
   return Math.pow(3, dimension) - 1;
 };
+calculateKingAttacks.formula = '3^d-1';
 
 /**
  * Calculate the maximum number of squares a pawn can attack in n dimensions
@@ -141,6 +154,11 @@ export const calculatePawnAttacks = (dimension) => {
     return Math.pow(3, dimension - 1) - 1;
   }
 };
+if (VERSION === 'Henri') {
+  calculatePawnAttacks.formula = '2(d-1)';
+} else {
+  calculatePawnAttacks.formula = '3^(d-1)-1';
+}
 
 // Helper function for calculating combinations (n choose k)
 function combinatorial(n, k) {
@@ -161,27 +179,21 @@ export const getPieceInfo = (pieceName) => {
   const pieces = {
     'Knight': {
       calculate: calculateKnightAttacks,
-      formula: '4d(d-1)'
     },
     'Rook': {
       calculate: calculateRookAttacks,
-      formula: 'd(l-1)'
     },
     'Bishop': {
       calculate: calculateBishopAttacks,
-      formula: '(d choose 2)(2l-3)'
     },
     'Queen': {
       calculate: calculateQueenAttacks,
-      formula: 'd(l-1)+(d choose 2)(2l-3)'
     },
     'King': {
       calculate: calculateKingAttacks,
-      formula: '3^d-1'
     },
     'Pawn': {
       calculate: calculatePawnAttacks,
-      formula: '2(d-1)'
     }
   };
 

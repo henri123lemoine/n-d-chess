@@ -1,6 +1,6 @@
 # N-Dimensional Chess Attack Calculator
 
-This React application calculates the maximum number of squares different chess pieces can attack in n-dimensional chess boards with side length 8.
+This web app calculates the maximum number of squares different chess pieces can attack in n-dimensional chess boards with side length 8.
 
 ## Current Features
 
@@ -23,25 +23,6 @@ Therefore, the maximum number of squares a knight can attack is 4 _n_ (n-1).
 ## Running the Application
 
 ```bash
-# Install dependencies
 npm install
-
-# Start the development server
 npm start
 ```
-
-## Future Extensions
-
-This application is designed to be easily extended to calculate attack patterns for other chess pieces in n-dimensional space.
-
-To add a new piece:
-
-1. Add a calculation function in `src/utils/calculator.js`
-2. Add the piece name to the `CHESS_PIECES` array in `src/components/AttackTable.js`
-3. Define the piece's formula and calculation method in the `getPieceInfo` function
-
-## Technologies Used
-
-- React
-- JavaScript
-- CSS
