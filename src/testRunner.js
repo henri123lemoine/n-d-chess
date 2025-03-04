@@ -9,22 +9,22 @@ const runAllTests = () => {
   // Get all piece calculators
   const calculators = {
     Knight: {
-      calculate: (dimension) => getPieceInfo('Knight').attackCalculator(dimension),
+      calculate: (dimension) => getPieceInfo('Knight').calculate(dimension),
     },
     Rook: {
-      calculate: (dimension) => getPieceInfo('Rook').attackCalculator(dimension),
+      calculate: (dimension) => getPieceInfo('Rook').calculate(dimension),
     },
     Bishop: {
-      calculate: (dimension) => getPieceInfo('Bishop').attackCalculator(dimension),
+      calculate: (dimension) => getPieceInfo('Bishop').calculate(dimension),
     },
     Queen: {
-      calculate: (dimension) => getPieceInfo('Queen').attackCalculator(dimension),
+      calculate: (dimension) => getPieceInfo('Queen').calculate(dimension),
     },
     King: {
-      calculate: (dimension) => getPieceInfo('King').attackCalculator(dimension),
+      calculate: (dimension) => getPieceInfo('King').calculate(dimension),
     },
     Pawn: {
-      calculate: (dimension) => getPieceInfo('Pawn').attackCalculator(dimension),
+      calculate: (dimension) => getPieceInfo('Pawn').calculate(dimension),
     },
   };
 

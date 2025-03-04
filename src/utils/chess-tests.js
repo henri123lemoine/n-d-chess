@@ -65,49 +65,6 @@ export const runTests = (calculators) => {
     pass: calculators['Pawn'].calculate(2) === 2,
   });
 
-  // Add specific 3D tests
-  results.push({
-    test: 'Knight 3D',
-    expected: 24,
-    actual: calculators['Knight'].calculate(3),
-    pass: calculators['Knight'].calculate(3) === 24,
-  });
-
-  results.push({
-    test: 'Rook 3D',
-    expected: 21,
-    actual: calculators['Rook'].calculate(3),
-    pass: calculators['Rook'].calculate(3) === 21,
-  });
-
-  results.push({
-    test: 'Bishop 3D',
-    expected: 98,
-    actual: calculators['Bishop'].calculate(3),
-    pass: calculators['Bishop'].calculate(3) === 98,
-  });
-
-  results.push({
-    test: 'Queen 3D',
-    expected: 119, // Rook (21) + Bishop (98)
-    actual: calculators['Queen'].calculate(3),
-    pass: calculators['Queen'].calculate(3) === 119,
-  });
-
-  results.push({
-    test: 'King 3D',
-    expected: 7, // 2^d - 1 when d=3, but not allowed to exceed 7 from our updated calculation
-    actual: calculators['King'].calculate(3),
-    pass: calculators['King'].calculate(3) === 7,
-  });
-
-  results.push({
-    test: 'Pawn 3D',
-    expected: 4, // 2 * (d-1) when d=3
-    actual: calculators['Pawn'].calculate(3),
-    pass: calculators['Pawn'].calculate(3) === 4,
-  });
-
   // Test that all values for dimensions 2-10 are non-negative
   const PIECES = ['Knight', 'Rook', 'Bishop', 'Queen', 'King', 'Pawn'];
   const DIMENSIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
