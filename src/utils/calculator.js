@@ -58,6 +58,11 @@
  * @returns {number} Maximum number of squares a knight can attack.
  */
 export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
+  // Knights cannot move in 1D, so return 0 immediately
+  if (dimension < 2 || sideLength < 2) {
+    return 0;
+  }
+
   if (knightMode === 'Standard') {
     if (sideLength < 3) {
       return 0;
@@ -94,10 +99,9 @@ export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
 
 calculateKnightAttacks.getFormula = (knightMode) => {
   if (knightMode === 'Standard') {
-    return "Piecewise: 0 for l<3, d(d-1) for 3≤l<5, 4·d·(d-1) for l≥5";
+    return "\\text{Knight}_{\\text{Standard}}(d, l) = \\begin{cases} 0 & \\text{if } l < 3 \\\\ d(d-1) & \\text{if } 3 \\leq l < 5 \\\\ 4d(d-1) & \\text{if } l \\geq 5 \\end{cases}";
   } else {
-    return "Piecewise: 0 for l<2; for l=2: 0 (if d<3) or C(d,3) (if d≥3); " +
-           "2·C(d,2)+C(d,3) for 3≤l<5; 8·(C(d,2)+C(d,3)) for l≥5";
+    return "\\text{Knight}_{\\text{Alternative}}(d, l) = \\begin{cases} 0 & \\text{if } l < 2 \\\\ 0 & \\text{if } l = 2 \\text{ and } d < 3 \\\\ \\binom{d}{3} & \\text{if } l = 2 \\text{ and } d \\geq 3 \\\\ 2\\binom{d}{2} + \\binom{d}{3} & \\text{if } 3 \\leq l < 5 \\\\ 8\\left(\\binom{d}{2} + \\binom{d}{3}\\right) & \\text{if } l \\geq 5 \\end{cases}";
   }
 };
 
@@ -116,7 +120,7 @@ calculateKnightAttacks.getFormula = (knightMode) => {
 export const calculateRookAttacks = (dimension, sideLength) => {
   return dimension * (sideLength - 1);
 };
-calculateRookAttacks.getFormula = () => 'd(l-1)';
+calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d(l-1)';
 
 /**
  * Calculate the maximum number of squares a bishop can attack in n dimensions.
@@ -164,8 +168,8 @@ export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
 
 calculateBishopAttacks.getFormula = (diagonalMode) => {
   return diagonalMode === 'Classic'
-    ? "\\binom{d}{2}(2l-3)"
-    : "\\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
+    ? "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2}(2l-3)"
+    : "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
 };
 
 /**
@@ -184,8 +188,8 @@ export const calculateQueenAttacks = (dimension, diagonalMode, sideLength) => {
 
 calculateQueenAttacks.getFormula = (diagonalMode) => {
   return diagonalMode === 'Classic'
-    ? "d(l-1) + \\binom{d}{2}(2l-3)"
-    : "d(l-1) + \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
+    ? "\\text{Queen}_{\\text{Classic}}(d, l) = d(l-1) + \\binom{d}{2}(2l-3)"
+    : "\\text{Queen}_{\\text{Hyper}}(d, l) = d(l-1) + \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
 };
 
 /**
@@ -205,7 +209,7 @@ export const calculateKingAttacks = (dimension, sideLength) => {
   return Math.pow(Math.min(sideLength, 3), dimension) - 1;
 };
 
-calculateKingAttacks.getFormula = () => 'min(l, 3)^d - 1';
+calculateKingAttacks.getFormula = () => '\\text{King}(d, l) = \\min(l, 3)^d - 1';
 
 /**
  * Calculate the maximum number of squares a pawn can attack in n dimensions.
@@ -235,17 +239,19 @@ export const calculatePawnAttacks = (dimension, diagonalMode, sideLength) => {
 
 calculatePawnAttacks.getFormula = (diagonalMode) => {
   return diagonalMode === 'Classic'
-    ? "(d-1) \\cdot \\min(l-1, 2)"
-    : "\\min(l, 3)^{d-1} - 1";
+    ? "\\text{Pawn}_{\\text{Classic}}(d, l) = (d-1) \\cdot \\min(l-1, 2)"
+    : "\\text{Pawn}_{\\text{Hyper}}(d, l) = \\min(l, 3)^{d-1} - 1";
 };
+
 /**
- * Helper function to calculate combinations (n choose k).
+ * Helper function to calculate combinations (n choose k). (Returns 0 for k>n)
  *
  * @param {number} n
  * @param {number} k
  * @returns {number} Combinatorial number: n! / (k!(n-k)!)
  */
 function combinatorial(n, k) {
+  if (k > n) return 0;
   return factorial(n) / (factorial(k) * factorial(n - k));
 }
 
