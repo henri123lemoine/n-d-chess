@@ -9,28 +9,59 @@
  *  - "Classic": Diagonals are defined in the traditional way (moving in exactly 2 dimensions).
  *  - "Hyper":  Diagonals are generalized to any subset (r ≥ 2) of dimensions moving uniformly.
  *
- * Set DIAGONAL_MODE to "Classic" or "Hyper" as desired.
+ * Additionally, two modes for knight movements are supported:
+ *  - "Standard": The knight moves as in standard chess (2 in one axis, 1 in another, 0 elsewhere).
+ *  - "Alternative": The knight moves any 3 squares away (Manhattan distance 3), except moves that are "straight"
+ *                   (i.e. moves along a single axis).
+ *
+ * Set DIAGONAL_MODE to "Classic" or "Hyper" and KNIGHT_MODE to "Standard" or "Alternative" as desired.
  */
 
 const SIDE_LENGTH = 8;
-const DIAGONAL_MODE = 'Hyper'; // Change to "Classic" for traditional 2D diagonal moves
+const DIAGONAL_MODE = 'Hyper'; // Change to "Classic" for traditional 2D diagonal moves.
+const KNIGHT_MODE = 'Alternative'; // Change to "Standard" for the classic knight moves.
 
 /**
  * Calculate the maximum number of squares a knight can attack in n dimensions.
  *
- * A knight moves by going 2 steps in one dimension and 1 step in another.
- * The number of ordered pairs of dimensions is d*(d-1), and for each pair there are 4 ways
- * (±2 and ±1) to assign the moves.
+ * Two modes are available:
  *
- * Formula: 4 * d * (d - 1)
+ * "Standard" mode (classic):
+ *   - The knight moves by going 2 steps in one dimension and 1 step in another.
+ *   - There are d*(d-1) ordered pairs of dimensions, and for each pair there are 4 ways
+ *     (±2 and ±1) to assign the moves.
+ *   - Formula: 4 * d * (d - 1)
+ *
+ * "Alternative" mode:
+ *   - The knight moves with a Manhattan distance of 3 but cannot move solely along one axis.
+ *   - This is split into two cases:
+ *       1. Moves with exactly 2 nonzero coordinates:
+ *          * They must be (2,1) (up to order) with sign choices.
+ *          * Total moves: 4 * d * (d - 1).
+ *       2. Moves with exactly 3 nonzero coordinates:
+ *          * The only possibility is (1,1,1) (up to signs).
+ *          * Total moves: 8 * C(d, 3).
+ *   - Overall formula: 4 * d * (d - 1) + 8 * C(d, 3)
  *
  * @param {number} dimension - Number of dimensions
  * @returns {number} Maximum number of squares a knight can attack
  */
 export const calculateKnightAttacks = (dimension) => {
-  return 4 * dimension * (dimension - 1);
+  if (KNIGHT_MODE === 'Standard') {
+    return 4 * dimension * (dimension - 1);
+  } else {
+    // Case 1: exactly 2 nonzero coordinates: (2,1)
+    const case2 = 4 * dimension * (dimension - 1); // 4 * C(d,2) with ordering already included.
+    // Case 2: exactly 3 nonzero coordinates: (1,1,1)
+    const case3 = 8 * combinatorial(dimension, 3);
+    return case2 + case3;
+  }
 };
-calculateKnightAttacks.formula = '4d(d-1)';
+if (KNIGHT_MODE === 'Standard') {
+  calculateKnightAttacks.formula = '4d(d-1)';
+} else {
+  calculateKnightAttacks.formula = '4d(d-1) + 8(d choose 3)';
+}
 
 /**
  * Calculate the maximum number of squares a rook can attack in n dimensions.
@@ -51,7 +82,7 @@ calculateRookAttacks.formula = 'd(l-1)';
 /**
  * Calculate the maximum number of squares a bishop can attack in n dimensions.
  *
- * The bishop’s movement is defined differently depending on the DIAGONAL_MODE.
+ * The bishop’s movement is defined differently depending on DIAGONAL_MODE.
  *
  * In "Classic" mode:
  *   - The bishop moves diagonally in a 2D subspace (exactly 2 dimensions change by ±1 per step).
@@ -139,12 +170,12 @@ calculateKingAttacks.formula = '3^d - 1';
  * In "Classic" mode:
  *   - The pawn moves 1 square forward and 1 square diagonally in any one of the remaining (d-1) dimensions.
  *   - For each of those dimensions, there are 2 directions (±1).
- *   - Formula: 2 * (d - 1)
+ *   - Formula: 2d - 2
  *
  * In "Hyper" mode:
  *   - The pawn moves 1 square forward (in the first dimension) and 1 square diagonally in any combination of the remaining dimensions.
  *   - For the remaining (d-1) dimensions, each coordinate can change by -1, 0, or +1.
- *   - Exclude the case where all lateral moves are 0 (which is the straight move).
+ *   - Exclude the case where all lateral moves are 0 (the straight move).
  *   - Formula: 3^(d-1) - 1
  *
  * @param {number} dimension - Number of dimensions (must be at least 2)
