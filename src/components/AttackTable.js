@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { getPieceInfo } from '../utils/calculator.js';
 import LatexFormula from './LatexFormula.js';
 
-// Define the specific dimensions to display
 const DIMENSIONS = [1, 2, 3, 4, 5, 6, 7, 10, 20, 50];
-
-// List of chess pieces to display
 const CHESS_PIECES = ['Pawn', 'Knight', 'Rook', 'Bishop', 'Queen', 'King'];
+const MIN_SIDE_LENGTH = 1;
 
 // Helper function to format large numbers with commas
 const formatNumber = (num) => {
@@ -45,7 +43,7 @@ const AttackTable = ({ diagonalMode, knightMode, sideLength, onSettingsChange })
 
   const handleSideLengthChange = (e) => {
     // Parse as integer and ensure it's at least 2
-    const newSideLength = Math.max(2, parseInt(e.target.value, 10) || 2);
+    const newSideLength = Math.max(MIN_SIDE_LENGTH, parseInt(e.target.value, 10) || MIN_SIDE_LENGTH);
     onSettingsChange({ diagonalMode, knightMode, sideLength: newSideLength });
   };
 
@@ -60,7 +58,7 @@ const AttackTable = ({ diagonalMode, knightMode, sideLength, onSettingsChange })
           <input
             id="side-length"
             type="number"
-            min="2"
+            min={MIN_SIDE_LENGTH}
             value={sideLength}
             onChange={handleSideLengthChange}
           />
