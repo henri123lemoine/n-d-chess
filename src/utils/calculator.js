@@ -120,31 +120,22 @@ calculateKnightAttacks.getFormula = (knightMode) => {
 export const calculateRookAttacks = (dimension, sideLength) => {
   return dimension * (sideLength - 1);
 };
+
 calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d(l-1)';
 
 /**
  * Calculate the maximum number of squares a bishop can attack in n dimensions.
  *
- * The bishop's movement is defined differently depending on diagonalMode.
- *
  * In "Classic" mode:
  *   - The bishop moves diagonally in a 2D subspace (exactly 2 dimensions change by ±1 per step).
- *   - For an even board, moving along a diagonal ray from a central square gives:
- *       * 4 moves in the positive direction,
- *       * 3 moves in the negative direction.
- *   - Total moves per 2D diagonal ray: 2*sideLength - 3.
- *   - There are C(d, 2) pairs of dimensions and 4 diagonal directions per pair.
- *   - Formula: C(d, 2) * (2*sideLength - 3)
+ *   - Moves per 2D diagonal ray: 2 * sideLength - 3.
+ *   - Total: C(d, 2) * (2 * sideLength - 3).
  *
- * In "Hyper" mode:
- *   - The bishop may move diagonally in any subset of r dimensions (with r ≥ 2) simultaneously,
- *     taking uniform steps in all chosen dimensions.
- *   - For each chosen r dimensions there are C(d, r) possibilities.
- *   - In any given r-dimensional move, one ray (all positive) yields 4 steps,
- *     while each of the other (2^r - 1) rays is limited to 3 steps (due to board asymmetry).
- *   - Total moves for that subset: (3 * 2^r + 1).
- *   - Summing over r from 2 to d:
- *       Formula: sum (r = 2 to d) [ C(d, r) * (3 * 2^r + 1) ]
+ * In "Hyper" mode, the bishop moves diagonally in any subset of r dimensions (r ≥ 2) uniformly.
+ * The move count should depend on sideLength. Here we use a piecewise definition:
+ *   - For sideLength === 2: Use the original constant factors: (3 * 2^r + 1) per r-dimensional set.
+ *   - For 2 < sideLength < 5: Interpolate linearly between the l=2 value and the full move set.
+ *   - For sideLength ≥ 5: Assume a full move set where each r-dimensional diagonal yields 2^r * (sideLength - 1) moves.
  *
  * @param {number} dimension - Number of dimensions.
  * @param {string} diagonalMode - "Classic" or "Hyper".
@@ -156,20 +147,40 @@ export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
     // Classical bishop movement in exactly 2 dimensions.
     return combinatorial(dimension, 2) * (2 * sideLength - 3);
   } else {
-    // Hyper-dimensional bishop movement.
-    // Sum over all possible subsets of dimensions of size r (r ≥ 2)
+    // Hyper mode
+    // For 2D, hyper mode should be identical to classic bishop moves
+    if (dimension === 2) {
+      return 2 * sideLength - 3;
+    }
     let total = 0;
     for (let r = 2; r <= dimension; r++) {
-      total += combinatorial(dimension, r) * (3 * Math.pow(2, r) + 1);
+      let term = 0;
+      if (sideLength === 2) {
+        // Use original constants
+        term = 3 * Math.pow(2, r) + 1;
+      } else if (sideLength < 5) {
+        // Interpolate between the reduced (l=2) value and the full move set.
+        // weight: 0 at l=2, 1 at l=5
+        const weight = (sideLength - 2) / 3;
+        const full = Math.pow(2, r) * (sideLength - 1);
+        const reduced = 3 * Math.pow(2, r) + 1;
+        term = weight * full + (1 - weight) * reduced;
+      } else {
+        // Full move set
+        term = Math.pow(2, r) * (sideLength - 1);
+      }
+      total += combinatorial(dimension, r) * term;
     }
     return total;
   }
 };
 
 calculateBishopAttacks.getFormula = (diagonalMode) => {
-  return diagonalMode === 'Classic'
-    ? "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2}(2l-3)"
-    : "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
+  if (diagonalMode === 'Classic') {
+    return "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2}(2l-3)";
+  } else {
+    return "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\begin{cases} \\text{For } d=2: 2l-3, \\ \text{for } d>2: \\sum_{r=2}^{d}\\binom{d}{r}\,\tau(r,l) \\end{cases}";
+  }
 };
 
 /**
@@ -187,19 +198,20 @@ export const calculateQueenAttacks = (dimension, diagonalMode, sideLength) => {
 };
 
 calculateQueenAttacks.getFormula = (diagonalMode) => {
-  return diagonalMode === 'Classic'
-    ? "\\text{Queen}_{\\text{Classic}}(d, l) = d(l-1) + \\binom{d}{2}(2l-3)"
-    : "\\text{Queen}_{\\text{Hyper}}(d, l) = d(l-1) + \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
+  if (diagonalMode === 'Classic') {
+    return "\\text{Queen}_{\\text{Classic}}(d, l) = d(l-1) + \\binom{d}{2}(2l-3)";
+  } else {
+    return "\\text{Queen}_{\\text{Hyper}}(d, l) = d(l-1) + \\text{Bishop}_{\\text{Hyper}}(d, l)";
+  }
 };
 
 /**
  * Calculate the maximum number of squares a king can attack in n dimensions.
+ * A king can move at most one square in any direction.
+ * In each dimension, the king has min(sideLength, 3) positions (including staying in place).
+ * Subtract 1 to exclude the starting square.
  *
- * A king can move at most one square in any direction. In each dimension,
- * the king has min(sideLength, 3) possible positions (including staying in place).
- * We subtract 1 from the total to exclude the square the king is on.
- *
- * Formula: min(sideLength, 3)^dimension - 1
+ * Formula: min(l, 3)^d - 1
  *
  * @param {number} dimension - Number of dimensions.
  * @param {number} sideLength - Side length of the board in each dimension.
@@ -238,9 +250,11 @@ export const calculatePawnAttacks = (dimension, diagonalMode, sideLength) => {
 };
 
 calculatePawnAttacks.getFormula = (diagonalMode) => {
-  return diagonalMode === 'Classic'
-    ? "\\text{Pawn}_{\\text{Classic}}(d, l) = (d-1) \\cdot \\min(l-1, 2)"
-    : "\\text{Pawn}_{\\text{Hyper}}(d, l) = \\min(l, 3)^{d-1} - 1";
+  if (diagonalMode === 'Classic') {
+    return "\\text{Pawn}_{\\text{Classic}}(d, l) = (d-1) \\cdot \\min(l-1, 2)";
+  } else {
+    return "\\text{Pawn}_{\\text{Hyper}}(d, l) = \\min(l, 3)^{d-1} - 1";
+  }
 };
 
 /**
@@ -256,7 +270,7 @@ function combinatorial(n, k) {
 }
 
 /**
- * Helper function for calculating factorials.
+ * Helper function to calculate factorial of n.
  *
  * @param {number} n
  * @returns {number} n!
@@ -304,6 +318,5 @@ export const getPieceInfo = (pieceName, diagonalMode = 'Hyper', knightMode = 'Al
       formula: calculateKingAttacks.getFormula()
     }
   };
-
   return pieces[pieceName] || null;
 };
