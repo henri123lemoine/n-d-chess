@@ -1,10 +1,8 @@
 /**
  * Chess Piece Attack Calculators for n-dimensional Chess
- * All boards are assumed to have side length 8 in every dimension by default,
- * but this can be configured.
  *
- * This module implements functions that calculate the maximum number
- * of squares a chess piece can attack from a central position on an l×…×l board.
+ * This module computes the maximum number of squares a chess piece can attack
+ * from an optimally chosen cell on an l-lengthed d-dimensional board.
  *
  * Two modes for diagonal movement are supported:
  *  - "Classic": Diagonals are defined in the traditional way (moving in exactly 2 dimensions).
@@ -18,57 +16,89 @@
  * Set DIAGONAL_MODE to "Classic" or "Hyper" and KNIGHT_MODE to "Standard" or "Alternative" as desired.
  */
 
-// Default side length, can be overridden
-const DEFAULT_SIDE_LENGTH = 8;
-
 /**
  * Calculate the maximum number of squares a knight can attack in n dimensions.
  *
  * Two modes for knight moves are supported:
+ *
  *   - "Standard": The knight moves 2 in one coordinate and 1 in another.
- *       Formula: 4 * d * (d - 1)
+ *       Ideal (infinite board) formula: 4*d*(d-1)
+ *       Piecewise for finite boards:
+ *         • l < 3: 0 moves (since a 2–step is impossible)
+ *         • 3 ≤ l < 5: Only one sign is available per coordinate (corner placement), so:
+ *               moves = d*(d-1)
+ *         • l ≥ 5: Full move set available: 4*d*(d-1)
  *
- *   - "Alternative": The knight moves a Manhattan distance of 3 in any direction
- *       except straight moves (i.e. moves must affect at least two coordinates).
- *       In this case the move vectors are those (a₁,...,a_d) with |a₁|+…+|a_d| = 3,
- *       excluding moves that change only one coordinate.
+ *   - "Alternative": The knight moves with Manhattan distance 3, using vectors
+ *       (a₁,...,a_d) with |a₁|+⋯+|a_d| = 3, excluding moves that change only one coordinate.
  *
- *       This breaks into two cases:
- *         Case 1: Exactly 2 nonzero coordinates: count = C(d,2) * 8.
- *         Case 2: Exactly 3 nonzero coordinates (only possible for d ≥ 3): count = C(d,3) * 8.
+ *       The move set is naturally divided into:
  *
- *       Total for Alternative mode:
- *         8 * (C(d,2) + C(d,3))
+ *         Case 1 (movesCase2): Exactly 2 nonzero coordinates.
+ *             Ideal count: C(d,2) * 8.
+ *         Case 2 (movesCase3): Exactly 3 nonzero coordinates (only for d ≥ 3).
+ *             Ideal count: C(d,3) * 8.
  *
- *       Note: For d = 1, no valid moves exist; for d = 2, this yields 8 moves (as desired).
+ *       Piecewise for finite boards:
+ *         • l < 2: 0 moves (not enough space for even a 1–step).
+ *         • l == 2:
+ *               – If d < 3: 0 moves (since a 2–step is needed).
+ *               – If d ≥ 3: Only moves that use 1–steps in all three axes are available,
+ *                 so each triple yields 1 move instead of 8; hence: moves = C(d,3)
+ *         • 3 ≤ l < 5:
+ *               – For movesCase2: Only one sign per coordinate is valid → factor reduces to 2 (instead of 8).
+ *               – For movesCase3: Only one valid orientation per triple.
+ *               Thus, moves = 2 * C(d,2) + C(d,3)
+ *         • l ≥ 5: Full move set available:
+ *               moves = 8 * (C(d,2) + C(d,3))
  *
- * @param {number} dimension - Number of dimensions
- * @param {string} knightMode - Mode of knight movement: "Standard" or "Alternative"
- * @param {number} sideLength - Side length of the board in each dimension
- * @returns {number} Maximum number of squares a knight can attack
+ * @param {number} dimension - Number of dimensions.
+ * @param {string} knightMode - "Standard" or "Alternative".
+ * @param {number} sideLength - Side length of the board in each dimension.
+ * @returns {number} Maximum number of squares a knight can attack.
  */
-export const calculateKnightAttacks = (dimension, knightMode = 'Alternative', sideLength = DEFAULT_SIDE_LENGTH) => {
+export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
   if (knightMode === 'Standard') {
-    return 4 * dimension * (dimension - 1);
-  } else {
-    // Calculate number of moves with exactly 2 nonzero coordinates.
-    // There are C(d,2) ways to choose the two coordinates,
-    // 2 ways to assign which coordinate moves 2 and which moves 1,
-    // and 2 sign choices for each, giving 8 per pair.
-    const movesCase2 = (dimension * (dimension - 1) / 2) * 8;
-
-    // Calculate number of moves with exactly 3 nonzero coordinates.
-    // Only possible when dimension >= 3. In this case, each nonzero coordinate is ±1.
-    // There are C(d,3) ways to choose the three coordinates, and 2^3 sign choices.
-    const movesCase3 = dimension >= 3 ? (dimension * (dimension - 1) * (dimension - 2) / 6) * 8 : 0;
-
-    return movesCase2 + movesCase3;
+    if (sideLength < 3) {
+      return 0;
+    } else if (sideLength < 5) {
+      // In a corner, only one sign is available per axis.
+      // Each ordered pair of distinct coordinates yields one move.
+      return dimension * (dimension - 1);
+    } else { // sideLength >= 5, a central placement is possible.
+      return 4 * dimension * (dimension - 1);
+    }
+  } else { // Alternative mode
+    if (sideLength < 2) {
+      return 0;
+    } else if (sideLength === 2) {
+      // With l == 2, a 2–step is impossible.
+      // Only moves that use three 1–steps (Case 2) are possible.
+      // For d < 3, no valid move exists.
+      return dimension < 3 ? 0 : combinatorial(dimension, 3);
+    } else if (sideLength < 5) {
+      // For 3 ≤ l < 5, a corner placement reduces the count.
+      // movesCase2: Reduced factor: 2 instead of 8.
+      const movesCase2 = combinatorial(dimension, 2) * 2;
+      // movesCase3: Reduced factor: only 1 orientation.
+      const movesCase3 = combinatorial(dimension, 3);
+      return movesCase2 + movesCase3;
+    } else { // sideLength >= 5
+      // Full ideal move set.
+      const movesCase2 = combinatorial(dimension, 2) * 8;
+      const movesCase3 = dimension >= 3 ? combinatorial(dimension, 3) * 8 : 0;
+      return movesCase2 + movesCase3;
+    }
   }
 };
+
 calculateKnightAttacks.getFormula = (knightMode) => {
-  return knightMode === 'Standard'
-    ? '4d(d-1)'
-    : '8\\binom{d}{2} + 8\\binom{d}{3}';
+  if (knightMode === 'Standard') {
+    return "Piecewise: 0 for l<3, d(d-1) for 3≤l<5, 4·d·(d-1) for l≥5";
+  } else {
+    return "Piecewise: 0 for l<2; for l=2: 0 (if d<3) or C(d,3) (if d≥3); " +
+           "2·C(d,2)+C(d,3) for 3≤l<5; 8·(C(d,2)+C(d,3)) for l≥5";
+  }
 };
 
 /**
@@ -77,13 +107,13 @@ calculateKnightAttacks.getFormula = (knightMode) => {
  * A rook moves along any single dimension. From a central square on an even board,
  * in each dimension there are sideLength - 1 available moves (the full extent of the axis).
  *
- * Formula: d * (sideLength - 1)
+ * Formula (for any l): \(d \cdot (l - 1)\)
  *
- * @param {number} dimension - Number of dimensions
- * @param {number} sideLength - Side length of the board in each dimension
- * @returns {number} Maximum number of squares a rook can attack
+ * @param {number} dimension - Number of dimensions.
+ * @param {number} sideLength - Side length of the board in each dimension.
+ * @returns {number} Maximum number of squares a rook can attack.
  */
-export const calculateRookAttacks = (dimension, sideLength = DEFAULT_SIDE_LENGTH) => {
+export const calculateRookAttacks = (dimension, sideLength) => {
   return dimension * (sideLength - 1);
 };
 calculateRookAttacks.getFormula = () => 'd(l-1)';
@@ -112,12 +142,12 @@ calculateRookAttacks.getFormula = () => 'd(l-1)';
  *   - Summing over r from 2 to d:
  *       Formula: sum (r = 2 to d) [ C(d, r) * (3 * 2^r + 1) ]
  *
- * @param {number} dimension - Number of dimensions
- * @param {string} diagonalMode - Mode of diagonal movement: "Classic" or "Hyper"
- * @param {number} sideLength - Side length of the board in each dimension
- * @returns {number} Maximum number of squares a bishop can attack
+ * @param {number} dimension - Number of dimensions.
+ * @param {string} diagonalMode - "Classic" or "Hyper".
+ * @param {number} sideLength - Side length of the board in each dimension.
+ * @returns {number} Maximum number of squares a bishop can attack.
  */
-export const calculateBishopAttacks = (dimension, diagonalMode = 'Hyper', sideLength = DEFAULT_SIDE_LENGTH) => {
+export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
   if (diagonalMode === 'Classic') {
     // Classical bishop movement in exactly 2 dimensions.
     return combinatorial(dimension, 2) * (2 * sideLength - 3);
@@ -131,91 +161,85 @@ export const calculateBishopAttacks = (dimension, diagonalMode = 'Hyper', sideLe
     return total;
   }
 };
+
 calculateBishopAttacks.getFormula = (diagonalMode) => {
   return diagonalMode === 'Classic'
-    ? '\\binom{d}{2}(2l-3)'
-    : '\\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)';
+    ? "\\binom{d}{2}(2l-3)"
+    : "\\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
 };
 
 /**
  * Calculate the maximum number of squares a queen can attack in n dimensions.
  *
- * The queen combines the moves of the rook and bishop.
- * Thus, its total moves equal the sum of the rook moves and bishop moves.
+ * The queen's moves are the union of the rook and bishop moves.
  *
- * Formula:
- *   - For "Classic": d*(sideLength-1) + (d choose 2)*(2*sideLength-3)
- *   - For "Hyper": d*(sideLength-1) + sum(r=2 to d)[C(d, r)*(3*2^r+1)]
- *
- * @param {number} dimension - Number of dimensions
- * @param {string} diagonalMode - Mode of diagonal movement: "Classic" or "Hyper"
- * @param {number} sideLength - Side length of the board in each dimension
- * @returns {number} Maximum number of squares a queen can attack
+ * @param {number} dimension - Number of dimensions.
+ * @param {string} diagonalMode - Mode for bishop moves ("Classic" or "Hyper").
+ * @param {number} sideLength - Side length of the board in each dimension.
+ * @returns {number} Maximum number of squares a queen can attack.
  */
-export const calculateQueenAttacks = (dimension, diagonalMode = 'Hyper', sideLength = DEFAULT_SIDE_LENGTH) => {
+export const calculateQueenAttacks = (dimension, diagonalMode, sideLength) => {
   return calculateRookAttacks(dimension, sideLength) + calculateBishopAttacks(dimension, diagonalMode, sideLength);
 };
+
 calculateQueenAttacks.getFormula = (diagonalMode) => {
   return diagonalMode === 'Classic'
-    ? 'd(l-1) + \\binom{d}{2}(2l-3)'
-    : 'd(l-1) + \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)';
+    ? "d(l-1) + \\binom{d}{2}(2l-3)"
+    : "d(l-1) + \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)";
 };
 
 /**
  * Calculate the maximum number of squares a king can attack in n dimensions.
  *
- * The king moves one square in any direction (including diagonals).
- * There are 3 options for each dimension (-1, 0, +1) except the case
- * where it stays in place (all 0s), hence:
+ * A king can move at most one square in any direction. In each dimension,
+ * the king has min(sideLength, 3) possible positions (including staying in place).
+ * We subtract 1 from the total to exclude the square the king is on.
  *
- * Formula: 3^d - 1
+ * Formula: min(sideLength, 3)^dimension - 1
  *
- * @param {number} dimension - Number of dimensions
- * @param {number} sideLength - Side length of the board in each dimension (not used for king)
- * @returns {number} Maximum number of squares a king can attack
+ * @param {number} dimension - Number of dimensions.
+ * @param {number} sideLength - Side length of the board in each dimension.
+ * @returns {number} Maximum number of squares a king can attack.
  */
-export const calculateKingAttacks = (dimension, sideLength = DEFAULT_SIDE_LENGTH) => {
-  return Math.pow(3, dimension) - 1;
+export const calculateKingAttacks = (dimension, sideLength) => {
+  return Math.pow(Math.min(sideLength, 3), dimension) - 1;
 };
-calculateKingAttacks.getFormula = () => '3^d - 1';
+
+calculateKingAttacks.getFormula = () => 'min(l, 3)^d - 1';
 
 /**
  * Calculate the maximum number of squares a pawn can attack in n dimensions.
  *
- * Here we assume the pawn moves "forward" along the first dimension.
- * Its attack moves are defined differently based on diagonalMode.
+ * The pawn moves "forward" along the first coordinate and attacks diagonally.
+ * In each remaining dimension, the pawn's attack pattern depends on the mode:
  *
- * In "Classic" mode:
- *   - The pawn moves 1 square forward and 1 square diagonally in any one of the remaining (d-1) dimensions.
- *   - For each of those dimensions, there are 2 directions (±1).
- *   - Formula: 2d - 2
+ * - Classic mode: Each dimension beyond the first contributes min(sideLength-1, 2) attack squares
+ * - Hyper mode: Similar to a king, but in one fewer dimension (dimension-1)
  *
- * In "Hyper" mode:
- *   - The pawn moves 1 square forward (in the first dimension) and 1 square diagonally in any combination of the remaining dimensions.
- *   - For the remaining (d-1) dimensions, each coordinate can change by -1, 0, or +1.
- *   - Exclude the case where all lateral moves are 0 (the straight move).
- *   - Formula: 3^(d-1) - 1
+ * Formula:
+ * - Classic mode: (dimension-1) × min(sideLength-1, 2)
+ * - Hyper mode: min(sideLength, 3)^(dimension-1) - 1
  *
- * @param {number} dimension - Number of dimensions (must be at least 2)
- * @param {string} diagonalMode - Mode of diagonal movement: "Classic" or "Hyper"
- * @param {number} sideLength - Side length of the board in each dimension (not used for pawn)
- * @returns {number} Maximum number of squares a pawn can attack
+ * @param {number} dimension - Number of dimensions (d ≥ 2).
+ * @param {string} diagonalMode - "Classic" or "Hyper".
+ * @param {number} sideLength - Side length of the board in each dimension.
+ * @returns {number} Maximum number of squares a pawn can attack.
  */
-export const calculatePawnAttacks = (dimension, diagonalMode = 'Hyper', sideLength = DEFAULT_SIDE_LENGTH) => {
+export const calculatePawnAttacks = (dimension, diagonalMode, sideLength) => {
   if (diagonalMode === 'Classic') {
-    return 2 * dimension - 2;
-  } else {
-    return Math.pow(3, dimension - 1) - 1;
+    return (dimension - 1) * Math.min(sideLength - 1, 2);
+  } else { // Hyper mode
+    return Math.pow(Math.min(sideLength, 3), dimension - 1) - 1;
   }
 };
+
 calculatePawnAttacks.getFormula = (diagonalMode) => {
   return diagonalMode === 'Classic'
-    ? '2d-2'
-    : '3^{d-1} - 1';
+    ? "(d-1) \\cdot \\min(l-1, 2)"
+    : "\\min(l, 3)^{d-1} - 1";
 };
-
 /**
- * Helper function for calculating combinations (n choose k).
+ * Helper function to calculate combinations (n choose k).
  *
  * @param {number} n
  * @param {number} k
@@ -239,17 +263,20 @@ function factorial(n) {
 /**
  * Get information about a chess piece.
  *
- * This function returns an object containing the calculation function and its formula
- * for a given piece name.
+ * Returns an object with the calculation function and its formula for the given piece.
  *
- * @param {string} pieceName - Name of the chess piece (e.g. "Knight", "Rook", "Bishop", "Queen", "King", "Pawn")
- * @param {string} diagonalMode - Mode of diagonal movement: "Classic" or "Hyper"
- * @param {string} knightMode - Mode of knight movement: "Standard" or "Alternative"
- * @param {number} sideLength - Side length of the board in each dimension
+ * @param {string} pieceName - Name of the chess piece (e.g. "Pawn", "Knight", "Rook", "Bishop", "Queen", "King")
+ * @param {string} diagonalMode - "Classic" or "Hyper"
+ * @param {string} knightMode - "Standard" or "Alternative"
+ * @param {number} sideLength - Side length of the board in each dimension.
  * @returns {object|null} Object with keys "calculate" and "formula", or null if not found.
  */
-export const getPieceInfo = (pieceName, diagonalMode = 'Hyper', knightMode = 'Alternative', sideLength = DEFAULT_SIDE_LENGTH) => {
+export const getPieceInfo = (pieceName, diagonalMode = 'Hyper', knightMode = 'Alternative', sideLength = 8) => {
   const pieces = {
+    'Pawn': {
+      calculate: (dimension) => calculatePawnAttacks(dimension, diagonalMode, sideLength),
+      formula: calculatePawnAttacks.getFormula(diagonalMode)
+    },
     'Knight': {
       calculate: (dimension) => calculateKnightAttacks(dimension, knightMode, sideLength),
       formula: calculateKnightAttacks.getFormula(knightMode)
@@ -269,10 +296,6 @@ export const getPieceInfo = (pieceName, diagonalMode = 'Hyper', knightMode = 'Al
     'King': {
       calculate: (dimension) => calculateKingAttacks(dimension, sideLength),
       formula: calculateKingAttacks.getFormula()
-    },
-    'Pawn': {
-      calculate: (dimension) => calculatePawnAttacks(dimension, diagonalMode, sideLength),
-      formula: calculatePawnAttacks.getFormula(diagonalMode)
     }
   };
 
