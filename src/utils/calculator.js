@@ -24,24 +24,23 @@ const KNIGHT_MODE = 'Alternative'; // Change to "Standard" for the classic knigh
 /**
  * Calculate the maximum number of squares a knight can attack in n dimensions.
  *
- * Two modes are available:
+ * Two modes for knight moves are supported:
+ *   - "Standard": The knight moves 2 in one coordinate and 1 in another.
+ *       Formula: 4 * d * (d - 1)
  *
- * "Standard" mode (classic):
- *   - The knight moves by going 2 steps in one dimension and 1 step in another.
- *   - There are d*(d-1) ordered pairs of dimensions, and for each pair there are 4 ways
- *     (±2 and ±1) to assign the moves.
- *   - Formula: 4 * d * (d - 1)
+ *   - "Alternative": The knight moves a Manhattan distance of 3 in any direction
+ *       except straight moves (i.e. moves must affect at least two coordinates).
+ *       In this case the move vectors are those (a₁,...,a_d) with |a₁|+…+|a_d| = 3,
+ *       excluding moves that change only one coordinate.
  *
- * "Alternative" mode:
- *   - The knight moves with a Manhattan distance of 3 but cannot move solely along one axis.
- *   - This is split into two cases:
- *       1. Moves with exactly 2 nonzero coordinates:
- *          * They must be (2,1) (up to order) with sign choices.
- *          * Total moves: 4 * d * (d - 1).
- *       2. Moves with exactly 3 nonzero coordinates:
- *          * The only possibility is (1,1,1) (up to signs).
- *          * Total moves: 8 * C(d, 3).
- *   - Overall formula: 4 * d * (d - 1) + 8 * C(d, 3)
+ *       This breaks into two cases:
+ *         Case 1: Exactly 2 nonzero coordinates: count = C(d,2) * 8.
+ *         Case 2: Exactly 3 nonzero coordinates (only possible for d ≥ 3): count = C(d,3) * 8.
+ *
+ *       Total for Alternative mode:
+ *         8 * (C(d,2) + C(d,3))
+ *
+ *       Note: For d = 1, no valid moves exist; for d = 2, this yields 8 moves (as desired).
  *
  * @param {number} dimension - Number of dimensions
  * @returns {number} Maximum number of squares a knight can attack
@@ -50,17 +49,24 @@ export const calculateKnightAttacks = (dimension) => {
   if (KNIGHT_MODE === 'Standard') {
     return 4 * dimension * (dimension - 1);
   } else {
-    // Case 1: exactly 2 nonzero coordinates: (2,1)
-    const case2 = 4 * dimension * (dimension - 1); // 4 * C(d,2) with ordering already included.
-    // Case 2: exactly 3 nonzero coordinates: (1,1,1)
-    const case3 = 8 * combinatorial(dimension, 3);
-    return case2 + case3;
+    // Calculate number of moves with exactly 2 nonzero coordinates.
+    // There are C(d,2) ways to choose the two coordinates,
+    // 2 ways to assign which coordinate moves 2 and which moves 1,
+    // and 2 sign choices for each, giving 8 per pair.
+    const movesCase2 = (dimension * (dimension - 1) / 2) * 8;
+
+    // Calculate number of moves with exactly 3 nonzero coordinates.
+    // Only possible when dimension >= 3. In this case, each nonzero coordinate is ±1.
+    // There are C(d,3) ways to choose the three coordinates, and 2^3 sign choices.
+    const movesCase3 = dimension >= 3 ? (dimension * (dimension - 1) * (dimension - 2) / 6) * 8 : 0;
+
+    return movesCase2 + movesCase3;
   }
 };
 if (KNIGHT_MODE === 'Standard') {
   calculateKnightAttacks.formula = '4d(d-1)';
 } else {
-  calculateKnightAttacks.formula = '4d(d-1) + 8(d choose 3)';
+  calculateKnightAttacks.formula = '8(C(d,2)+C(d,3))';
 }
 
 /**
