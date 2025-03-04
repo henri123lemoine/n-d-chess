@@ -88,3 +88,95 @@ h1, h2 {
 .test-failures ul {
   color: #c62828;
 }
+
+/* Settings Panel */
+.settings-panel {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.setting-group {
+  margin-bottom: 15px;
+}
+
+.setting-group:last-child {
+  margin-bottom: 0;
+}
+
+.setting-group label {
+  display: inline-block;
+  font-weight: bold;
+  margin-right: 10px;
+  min-width: 150px;
+}
+
+.setting-group select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  background-color: white;
+  font-size: 16px;
+  min-width: 250px;
+}
+
+.setting-description {
+  margin-top: 8px;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.4;
+  padding-left: 160px;
+}
+
+.setting-group input[type="number"] {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  background-color: white;
+  font-size: 16px;
+  width: 80px;
+  text-align: center;
+}
+
+/* Remove default number input spinners in various browsers */
+.setting-group input[type="number"]::-webkit-inner-spin-button,
+.setting-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.setting-group input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+/* Highlight changes in the table when settings change */
+@keyframes highlight {
+  0% { background-color: rgba(255, 251, 204, 0.8); }
+  100% { background-color: transparent; }
+}
+
+tbody td {
+  transition: background-color 0.5s ease;
+}
+
+tbody td.updated {
+  animation: highlight 1.5s ease;
+}
+
+/* Responsive adjustments for settings panel */
+@media (max-width: 768px) {
+  .setting-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .setting-group select {
+    width: 100%;
+  }
+
+  .setting-description {
+    padding-left: 0;
+  }
+}
