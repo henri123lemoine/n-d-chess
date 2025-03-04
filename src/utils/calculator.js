@@ -128,14 +128,12 @@ calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d(l-1)';
  *
  * In "Classic" mode:
  *   - The bishop moves diagonally in a 2D subspace (exactly 2 dimensions change by ±1 per step).
- *   - Moves per 2D diagonal ray: 2 * sideLength - 3.
- *   - Total: C(d, 2) * (2 * sideLength - 3).
+ *   - Maximum attack squares formula: C(d, 2) * (2l - 2 - (l % 2))
  *
- * In "Hyper" mode, the bishop moves diagonally in any subset of r dimensions (r ≥ 2) uniformly.
- * The move count should depend on sideLength. Here we use a piecewise definition:
- *   - For sideLength === 2: Use the original constant factors: (3 * 2^r + 1) per r-dimensional set.
- *   - For 2 < sideLength < 5: Interpolate linearly between the l=2 value and the full move set.
- *   - For sideLength ≥ 5: Assume a full move set where each r-dimensional diagonal yields 2^r * (sideLength - 1) moves.
+ * In "Hyper" mode:
+ *   - The bishop moves diagonally in any subset of r dimensions (r ≥ 2) uniformly.
+ *   - Formula: Sum from r=2 to d of: C(d, r) * 2^r * f(l,r)
+ *     Where f(l,r) is a transition function based on side length
  *
  * @param {number} dimension - Number of dimensions.
  * @param {string} diagonalMode - "Classic" or "Hyper".
@@ -144,42 +142,55 @@ calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d(l-1)';
  */
 export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
   if (diagonalMode === 'Classic') {
-    // Classical bishop movement in exactly 2 dimensions.
-    return combinatorial(dimension, 2) * (2 * sideLength - 3);
+    // For classic mode, the bishop moves diagonally in exactly 2 dimensions.
+    // Handle small boards explicitly.
+    if (sideLength < 2) return 0;
+    if (sideLength === 2) return combinatorial(dimension, 2);
+    // For sideLength >= 3, optimal 2D bishop moves:
+    // When sideLength is odd, maximum moves = 2*(sideLength-1).
+    // When sideLength is even, maximum moves = 2*(sideLength-1) - 1.
+    const twoDimMoves = (sideLength % 2 === 0) ? (2 * sideLength - 3) : (2 * sideLength - 2);
+    return combinatorial(dimension, 2) * twoDimMoves;
   } else {
-    // Hyper mode
-    // For 2D, hyper mode should be identical to classic bishop moves
-    if (dimension === 2) {
-      return 2 * sideLength - 3;
-    }
+    // Hyper mode: generalized diagonal movement in any subset of r dimensions, for r >= 2.
+    // For each r-dimensional diagonal, an optimal placement gives:
+    // If sideLength < 2, no moves.
+    if (sideLength < 2) return 0;
     let total = 0;
+    // For each possible r (number of dimensions moved simultaneously), where r >= 2 and r <= dimension.
     for (let r = 2; r <= dimension; r++) {
-      let term = 0;
-      if (sideLength === 2) {
-        // Use original constants
-        term = 3 * Math.pow(2, r) + 1;
-      } else if (sideLength < 5) {
-        // Interpolate between the reduced (l=2) value and the full move set.
-        // weight: 0 at l=2, 1 at l=5
-        const weight = (sideLength - 2) / 3;
-        const full = Math.pow(2, r) * (sideLength - 1);
-        const reduced = 3 * Math.pow(2, r) + 1;
-        term = weight * full + (1 - weight) * reduced;
-      } else {
-        // Full move set
-        term = Math.pow(2, r) * (sideLength - 1);
-      }
-      total += combinatorial(dimension, r) * term;
+      // For an r-dimensional diagonal, there are 2^(r-1) pairs of opposite directions.
+      // In an odd sideLength board, an optimal cell gives (sideLength-1)/2 moves in each direction, totaling 2^(r-1) * (sideLength-1).
+      // In an even board, due to asymmetry, one direction yields one less move overall per pair, so we subtract (2^(r-1) - 1).
+      const ideal = Math.pow(2, r - 1) * (sideLength - 1);
+      const moves_r = (sideLength % 2 === 0) ? (ideal - (Math.pow(2, r - 1) - 1)) : ideal;
+      total += combinatorial(dimension, r) * moves_r;
     }
-    return total;
+    return Math.round(total); // rounding to handle floating point issues
   }
 };
 
+/**
+ * Returns the mathematical formula representation for the given diagonal mode.
+ *
+ * @param {string} diagonalMode - "Classic" or "Hyper".
+ * @returns {string} LaTeX representation of the formula.
+ */
 calculateBishopAttacks.getFormula = (diagonalMode) => {
   if (diagonalMode === 'Classic') {
-    return "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2}(2l-3)";
+    // For Classic mode, now the formula is essentially:
+    // \text{Bishop}_{Classic}(d, l) = \binom{d}{2} \times
+    // \begin{cases}
+    //   0, & l < 2 \\
+    //   1, & l = 2 \\
+    //   2l-2, & l \ge 3, l \text{ odd} \\
+    //   2l-3, & l \ge 3, l \text{ even}
+    // \end{cases}
+    return "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2} \\cdot \\begin{cases} 0 & l < 2 \\\\ 1 & l = 2 \\\\ 2l-2 & l \\geq 3 \\text{ (l odd)} \\\\ 2l-3 & l \\geq 3 \\text{ (l even)} \\end{cases}";
   } else {
-    return "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\begin{cases} \\text{For } d=2: 2l-3, \\ \text{for } d>2: \\sum_{r=2}^{d}\\binom{d}{r}\,\tau(r,l) \\end{cases}";
+    // For Hyper mode, the generalized formula is:
+    // \text{Bishop}_{\text{Hyper}}(d, l) = \sum_{r=2}^{d} \binom{d}{r} \cdot \left[2^{r-1}(l-1) - \mathbb{1}_{l\text{ even}}\,(2^{r-1}-1)\right]
+    return "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1}(l-1) - \\mathbb{1}_{l\\text{ even}}(2^{r-1}-1)\\right]";
   }
 };
 
