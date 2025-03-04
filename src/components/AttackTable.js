@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getPieceInfo } from '../utils/calculator.js';
+import LatexFormula from './LatexFormula.js';
 
 // Define the specific dimensions to display
 const DIMENSIONS = [1, 2, 3, 4, 5, 6, 7, 10, 20, 50];
 
 // List of chess pieces to display
-const CHESS_PIECES = ['Knight', 'Rook', 'Bishop', 'Queen', 'King', 'Pawn'];
+const CHESS_PIECES = ['Pawn', 'Knight', 'Rook', 'Bishop', 'Queen', 'King'];
 
 // Helper function to format large numbers with commas
 const formatNumber = (num) => {
@@ -133,9 +134,7 @@ const AttackTable = ({ diagonalMode, knightMode, sideLength, onSettingsChange })
           return pieceInfo?.formula ? (
             <div className="formula" key={piece}>
               <h3>{piece}</h3>
-              <p>
-                {pieceInfo.formula}
-              </p>
+              <LatexFormula formula={pieceInfo.formula} />
             </div>
           ) : null;
         })}

@@ -66,7 +66,9 @@ export const calculateKnightAttacks = (dimension, knightMode = 'Alternative', si
   }
 };
 calculateKnightAttacks.getFormula = (knightMode) => {
-  return knightMode === 'Standard' ? '4d(d-1)' : '8(C(d,2)+C(d,3))';
+  return knightMode === 'Standard'
+    ? '4d(d-1)'
+    : '8\\binom{d}{2} + 8\\binom{d}{3}';
 };
 
 /**
@@ -130,9 +132,9 @@ export const calculateBishopAttacks = (dimension, diagonalMode = 'Hyper', sideLe
   }
 };
 calculateBishopAttacks.getFormula = (diagonalMode) => {
-  return diagonalMode === 'Classic' ?
-    '(d choose 2)(2l-3)' :
-    'sum(r=2 to d)[C(d, r)(3*2^r+1)]';
+  return diagonalMode === 'Classic'
+    ? '\\binom{d}{2}(2l-3)'
+    : '\\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)';
 };
 
 /**
@@ -154,7 +156,9 @@ export const calculateQueenAttacks = (dimension, diagonalMode = 'Hyper', sideLen
   return calculateRookAttacks(dimension, sideLength) + calculateBishopAttacks(dimension, diagonalMode, sideLength);
 };
 calculateQueenAttacks.getFormula = (diagonalMode) => {
-  return calculateRookAttacks.getFormula() + ' + ' + calculateBishopAttacks.getFormula(diagonalMode);
+  return diagonalMode === 'Classic'
+    ? 'd(l-1) + \\binom{d}{2}(2l-3)'
+    : 'd(l-1) + \\sum_{r=2}^{d}\\binom{d}{r}(3 \\cdot 2^r+1)';
 };
 
 /**
@@ -205,7 +209,9 @@ export const calculatePawnAttacks = (dimension, diagonalMode = 'Hyper', sideLeng
   }
 };
 calculatePawnAttacks.getFormula = (diagonalMode) => {
-  return diagonalMode === 'Classic' ? '2d-2' : '3^(d-1) - 1';
+  return diagonalMode === 'Classic'
+    ? '2d-2'
+    : '3^{d-1} - 1';
 };
 
 /**
