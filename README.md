@@ -1,8 +1,8 @@
-# N-Dimensional Chess
+# N-Dimensional Chess Attack Calculator
 
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/henri123lemoine/n-d-chess?include_prereleases)
-![GitHub](https://img.shields.io/github/license/henri123lemoine/n-d-chess)
+[![GitHub release](https://img.shields.io/github/v/release/henri123lemoine/n-d-chess)](https://github.com/henri123lemoine/n-d-chess/releases)
 [![Netlify](https://img.shields.io/badge/Netlify-Deployed-brightgreen)](https://n-d-chess.netlify.app/)
+[![GitHub](https://img.shields.io/github/license/henri123lemoine/n-d-chess)](https://github.com/henri123lemoine/n-d-chess/blob/main/LICENSE)
 
 A web application that computes the maximum number of squares various chess pieces can attack on n-dimensional chessboards with configurable side lengths, built with React and KaTeX for mathematical rendering.
 
