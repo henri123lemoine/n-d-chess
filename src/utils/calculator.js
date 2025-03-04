@@ -4,6 +4,7 @@
  */
 
 const SIDE_LENGTH = 8;
+const VERSION = 'Thomas';  // alt: 'Henri'. Mainly about diagonal definition.
 
 /**
  * Calculate the maximum number of squares a knight can attack in n dimensions
@@ -47,18 +48,42 @@ export const calculateRookAttacks = (dimension) => {
  * @returns {number} Maximum number of squares a bishop can attack
  */
 export const calculateBishopAttacks = (dimension) => {
-  if (dimension < 2) return 0;
+  if (VERSION === 'Henri') {
+    // Old formula:
+    // A bishop moves diagonally in a 2D subspace.
+    // From a central square on an even board, the number of squares available along a diagonal ray is:
+    //   - For negative direction: (SIDE_LENGTH/2 - 1) steps,
+    //   - For positive direction: (SIDE_LENGTH/2) steps.
+    // Total per 2D diagonal = ( (SIDE_LENGTH/2 - 1) + (SIDE_LENGTH/2 - 1) + (SIDE_LENGTH/2 - 1) + (SIDE_LENGTH/2) )
+    //                         = 4*(SIDE_LENGTH/2) - 3 = 2*SIDE_LENGTH - 3.
+    // There are C(d, 2) ways to choose which 2 dimensions to move in,
+    // and each such pair yields 4 diagonal directions.
+    // Thus, total bishop attack squares = C(d, 2) * (2*SIDE_LENGTH - 3).
+    return combinatorial(dimension, 2) * (2 * SIDE_LENGTH - 3);
+  } else {
+    // New formula:
+    // Calculate the maximum number of squares a bishop can attack in n dimensions,
+    // when allowed to move along any "diagonal" – i.e. moving in a subset (r ≥ 2)
+    // of dimensions simultaneously with a uniform step.
+    //
+    // Assumptions (for an 8×…×8 board with even side length):
+    //   - In any dimension, moving in the positive direction yields 4 moves,
+    //     and moving in the negative direction yields 3 moves.
+    //   - In an r-dimensional move, exactly one ray (all positive) yields 4 moves,
+    //     while the remaining (2^r - 1) rays are limited to 3 moves.
+    //
+    // Thus, for a given r (with 2 ≤ r ≤ d), there are C(d, r) ways to choose
+    // the dimensions and (3*2^r + 1) moves available per chosen r dimensions.
+    //
+    // Total bishop moves:
+    //   sum (r = 2 to d) [ C(d, r) * (3 * 2^r + 1) ]
 
-  // A bishop moves diagonally in a 2D subspace.
-  // From a central square on an even board, the number of squares available along a diagonal ray is:
-  //   - For negative direction: (SIDE_LENGTH/2 - 1) steps,
-  //   - For positive direction: (SIDE_LENGTH/2) steps.
-  // Total per 2D diagonal = ( (SIDE_LENGTH/2 - 1) + (SIDE_LENGTH/2 - 1) + (SIDE_LENGTH/2 - 1) + (SIDE_LENGTH/2) )
-  //                         = 4*(SIDE_LENGTH/2) - 3 = 2*SIDE_LENGTH - 3.
-  // There are C(d, 2) ways to choose which 2 dimensions to move in,
-  // and each such pair yields 4 diagonal directions.
-  // Thus, total bishop attack squares = C(d, 2) * (2*SIDE_LENGTH - 3).
-  return combinatorial(dimension, 2) * (2 * SIDE_LENGTH - 3);
+    let total = 0;
+    for (let r = 2; r <= dimension; r++) {
+      total += combinatorial(dimension, r) * (3 * Math.pow(2, r) + 1);
+    }
+    return total;
+  }
 };
 
 /**
@@ -97,11 +122,24 @@ export const calculateKingAttacks = (dimension) => {
  * @returns {number} Maximum number of squares a pawn can attack
  */
 export const calculatePawnAttacks = (dimension) => {
-  // A pawn attacks diagonally forward.
-  // It moves 1 in the forward dimension and 1 in any one of the (dimension-1) other dimensions.
-  // For each of these, there are 2 directions (±).
-  // Total: 2 * (dimension - 1)
-  return 2 * (dimension - 1);
+  if (VERSION === 'Henri') {
+    // Old formula:
+    // A pawn attacks diagonally forward.
+    // It moves 1 in the forward dimension and 1 in any one of the (dimension-1) other dimensions.
+    // For each of these, there are 2 directions (±).
+    // Total: 2 * (dimension - 1)
+    return 2 * (dimension - 1);
+  } else {
+    // New formula:
+    // Calculate the maximum number of squares a pawn can attack in n dimensions,
+    // when it moves one step forward (in a designated "forward" dimension) and
+    // one step diagonally in any combination of the remaining dimensions.
+    //
+    // For each of the (dimension-1) other axes, the pawn can move -1, 0, or +1.
+    // Excluding the case where all lateral moves are 0 (the straight move),
+    // the total number of attack moves is: 3^(dimension-1) - 1.
+    return Math.pow(3, dimension - 1) - 1;
+  }
 };
 
 // Helper function for calculating combinations (n choose k)
