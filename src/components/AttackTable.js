@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getPieceInfo } from '../utils/calculator.js';
 
-// Define the minimum and maximum dimensions to display
-const MIN_DIMENSION = 2;
-const MAX_DIMENSION = 10;
+// Define the specific dimensions to display
+const DIMENSIONS = [2, 3, 4, 5, 6, 7, 10, 20, 50];
 
 // List of chess pieces to display
 const CHESS_PIECES = ['Knight', 'Rook', 'Bishop', 'Queen', 'King', 'Pawn'];
@@ -17,7 +16,7 @@ const AttackTable = () => {
   // State to hold calculated attack counts
   const [attackCounts, setAttackCounts] = useState({});
 
-  // Calculate attack counts for all pieces and all dimensions on component mount
+  // Calculate attack counts for all pieces and selected dimensions on component mount
   useEffect(() => {
     const counts = {};
 
@@ -26,19 +25,13 @@ const AttackTable = () => {
       if (!pieceInfo) return;
 
       counts[piece] = {};
-      for (let d = MIN_DIMENSION; d <= MAX_DIMENSION; d++) {
+      DIMENSIONS.forEach(d => {
         counts[piece][d] = pieceInfo.calculate(d);
-      }
+      });
     });
 
     setAttackCounts(counts);
   }, []);
-
-  // Generate array of dimensions for the table header
-  const dimensions = Array.from(
-    { length: MAX_DIMENSION - MIN_DIMENSION + 1 },
-    (_, i) => MIN_DIMENSION + i
-  );
 
   return (
     <div>
@@ -49,8 +42,8 @@ const AttackTable = () => {
         <thead>
           <tr>
             <th>Piece</th>
-            {dimensions.map(d => (
-              <th key={d}>{d}-D</th>
+            {DIMENSIONS.map(d => (
+              <th key={d}>{d}D</th>
             ))}
           </tr>
         </thead>
@@ -58,7 +51,7 @@ const AttackTable = () => {
           {CHESS_PIECES.map(piece => (
             <tr key={piece}>
               <td>{piece}</td>
-              {dimensions.map(d => (
+              {DIMENSIONS.map(d => (
                 <td key={d}>
                   {attackCounts[piece] ? formatNumber(attackCounts[piece][d]) : '...'}
                 </td>
@@ -78,7 +71,7 @@ const AttackTable = () => {
             <div className="formula" key={piece}>
               <h3>{piece}</h3>
               <p>
-                Maximum attackable squares = {pieceInfo.formula}
+                {pieceInfo.formula}
               </p>
             </div>
           ) : null;
