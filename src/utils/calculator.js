@@ -19,38 +19,16 @@
 /**
  * Calculate the maximum number of squares a knight can attack in n dimensions.
  *
- * Two modes for knight moves are supported:
+ * For "Standard" mode:
+ *   - The knight moves 2 in one coordinate and 1 in another.
+ *   - Formula: [l ≥ 3] · d(d-1) · (1 + 3[l ≥ 5])
  *
- *   - "Standard": The knight moves 2 in one coordinate and 1 in another.
- *       Ideal (infinite board) formula: 4*d*(d-1)
- *       Piecewise for finite boards:
- *         • l < 3: 0 moves (since a 2–step is impossible)
- *         • 3 ≤ l < 5: Only one sign is available per coordinate (corner placement), so:
- *               moves = d*(d-1)
- *         • l ≥ 5: Full move set available: 4*d*(d-1)
- *
- *   - "Alternative": The knight moves with Manhattan distance 3, using vectors
- *       (a₁,...,a_d) with |a₁|+⋯+|a_d| = 3, excluding moves that change only one coordinate.
- *
- *       The move set is naturally divided into:
- *
- *         Case 1 (movesCase2): Exactly 2 nonzero coordinates.
- *             Ideal count: C(d,2) * 8.
- *         Case 2 (movesCase3): Exactly 3 nonzero coordinates (only for d ≥ 3).
- *             Ideal count: C(d,3) * 8.
- *
- *       Piecewise for finite boards:
- *         • l < 2: 0 moves (not enough space for even a 1–step).
- *         • l == 2:
- *               – If d < 3: 0 moves (since a 2–step is needed).
- *               – If d ≥ 3: Only moves that use 1–steps in all three axes are available,
- *                 so each triple yields 1 move instead of 8; hence: moves = C(d,3)
- *         • 3 ≤ l < 5:
- *               – For movesCase2: Only one sign per coordinate is valid → factor reduces to 2 (instead of 8).
- *               – For movesCase3: Only one valid orientation per triple.
- *               Thus, moves = 2 * C(d,2) + C(d,3)
- *         • l ≥ 5: Full move set available:
- *               moves = 8 * (C(d,2) + C(d,3))
+ * For "Alternative" mode:
+ *   - The knight moves with Manhattan distance 3, using vectors with |a₁|+⋯+|a_d| = 3,
+ *     excluding moves that change only one coordinate.
+ *   - Formula:
+ *       [l ≥ 3] · C(d,2) · (2 + 6[l ≥ 5]) +
+ *       [d ≥ 3] · [l ≥ 2] · C(d,3) · (1 + 7[l ≥ 5])
  *
  * @param {number} dimension - Number of dimensions.
  * @param {string} knightMode - "Standard" or "Alternative".
@@ -58,50 +36,25 @@
  * @returns {number} Maximum number of squares a knight can attack.
  */
 export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
-  // Knights cannot move in 1D, so return 0 immediately
-  if (dimension < 2 || sideLength < 2) {
-    return 0;
-  }
-
   if (knightMode === 'Standard') {
-    if (sideLength < 3) {
-      return 0;
-    } else if (sideLength < 5) {
-      // In a corner, only one sign is available per axis.
-      // Each ordered pair of distinct coordinates yields one move.
-      return dimension * (dimension - 1);
-    } else { // sideLength >= 5, a central placement is possible.
-      return 4 * dimension * (dimension - 1);
-    }
+    // Standard knight formula without conditionals
+    return (sideLength >= 3) * dimension * (dimension - 1) * (1 + 3 * (sideLength >= 5));
   } else { // Alternative mode
-    if (sideLength < 2) {
-      return 0;
-    } else if (sideLength === 2) {
-      // With l == 2, a 2–step is impossible.
-      // Only moves that use three 1–steps (Case 2) are possible.
-      // For d < 3, no valid move exists.
-      return dimension < 3 ? 0 : combinatorial(dimension, 3);
-    } else if (sideLength < 5) {
-      // For 3 ≤ l < 5, a corner placement reduces the count.
-      // movesCase2: Reduced factor: 2 instead of 8.
-      const movesCase2 = combinatorial(dimension, 2) * 2;
-      // movesCase3: Reduced factor: only 1 orientation.
-      const movesCase3 = combinatorial(dimension, 3);
-      return movesCase2 + movesCase3;
-    } else { // sideLength >= 5
-      // Full ideal move set.
-      const movesCase2 = combinatorial(dimension, 2) * 8;
-      const movesCase3 = dimension >= 3 ? combinatorial(dimension, 3) * 8 : 0;
-      return movesCase2 + movesCase3;
-    }
+    // Case 2: Exactly 2 nonzero coordinates
+    const case2Moves = (sideLength >= 3) * combinatorial(dimension, 2) * (2 + 6 * (sideLength >= 5));
+
+    // Case 3: Exactly 3 nonzero coordinates
+    const case3Moves = (dimension >= 3) * (sideLength >= 2) * combinatorial(dimension, 3) * (1 + 7 * (sideLength >= 5));
+
+    return case2Moves + case3Moves;
   }
 };
 
 calculateKnightAttacks.getFormula = (knightMode) => {
   if (knightMode === 'Standard') {
-    return "\\text{Knight}_{\\text{Standard}}(d, l) = \\begin{cases} 0 & \\text{if } l < 3 \\\\ d(d-1) & \\text{if } 3 \\leq l < 5 \\\\ 4d(d-1) & \\text{if } l \\geq 5 \\end{cases}";
+    return "\\text{Knight}_{\\text{Standard}}(d, l) = \\mathbb{1}_{l \\geq 3} \\cdot d(d-1) \\cdot (1 + 3 \\cdot \\mathbb{1}_{l \\geq 5})";
   } else {
-    return "\\text{Knight}_{\\text{Alternative}}(d, l) = \\begin{cases} 0 & \\text{if } l < 2 \\\\ 0 & \\text{if } l = 2 \\text{ and } d < 3 \\\\ \\binom{d}{3} & \\text{if } l = 2 \\text{ and } d \\geq 3 \\\\ 2\\binom{d}{2} + \\binom{d}{3} & \\text{if } 3 \\leq l < 5 \\\\ 8\\left(\\binom{d}{2} + \\binom{d}{3}\\right) & \\text{if } l \\geq 5 \\end{cases}";
+    return "\\text{Knight}_{\\text{Alternative}}(d, l) = \\mathbb{1}_{l \\geq 3} \\cdot \\binom{d}{2} \\cdot (2 + 6 \\cdot \\mathbb{1}_{l \\geq 5}) + \\mathbb{1}_{d \\geq 3} \\cdot \\mathbb{1}_{l \\geq 2} \\cdot \\binom{d}{3} \\cdot (1 + 7 \\cdot \\mathbb{1}_{l \\geq 5})";
   }
 };
 
