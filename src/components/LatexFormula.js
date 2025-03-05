@@ -12,10 +12,22 @@ const LatexFormula = ({ formula }) => {
 
   useEffect(() => {
     if (containerRef.current && window.katex) {
-      window.katex.render(formula, containerRef.current, {
-        throwOnError: false,
-        displayMode: true
-      });
+      try {
+        window.katex.render(formula, containerRef.current, {
+          throwOnError: false,
+          displayMode: true,
+          fleqn: false,
+          leqno: false,
+          strict: false,
+          trust: true,
+          macros: {
+            "\\mathbb": "\\mathbf"
+          }
+        });
+      } catch (error) {
+        console.error('Error rendering LaTeX formula:', error);
+        containerRef.current.textContent = 'Error rendering formula: ' + formula;
+      }
     }
   }, [formula]);
 

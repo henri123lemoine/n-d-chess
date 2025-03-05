@@ -72,7 +72,7 @@ export const calculateRookAttacks = (dimension, sideLength) => {
   return dimension * (sideLength - 1);
 };
 
-calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d(l-1)';
+calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d \\cdot (l-1)';
 
 /**
  * Calculate the maximum number of squares a bishop can attack in n dimensions.
@@ -110,7 +110,7 @@ calculateBishopAttacks.getFormula = (diagonalMode) => {
   if (diagonalMode === 'Classic') {
     return "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
   } else {
-    return "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1}(l-1) - \\mathbb{1}_{l\\text{ even}}(2^{r-1}-1)\\right]";
+    return "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1} \\cdot (l-1) - \\mathbb{1}_{l \\text{ even}} \\cdot (2^{r-1}-1)\\right]";
   }
 };
 
@@ -129,10 +129,10 @@ export const calculateQueenAttacks = (dimension, diagonalMode, sideLength) => {
 };
 
 calculateQueenAttacks.getFormula = (diagonalMode) => {
-  if (diagonalMode === 'Hyper') {
-    return "\\text{Queen}_{\\text{Hyper}}(d, l) = d(l-1) + \\sum_{r=2}^{d} \\binom{d}{r}\\Bigl[2^{r-1}(l-1) - \\mathbb{1}_{\\{l\\,\\mathrm{even}\\}}(2^{r-1}-1)\\Bigr]";
+  if (diagonalMode === 'Classic') {
+    return "\\text{Queen}_{\\text{Classic}}(d, l) = d \\cdot (l-1) + \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
   } else {
-    return "\\text{Queen}_{\\text{Classic}}(d, l) = d(l-1) + \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
+    return "\\text{Queen}_{\\text{Hyper}}(d, l) = d \\cdot (l-1) + \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1} \\cdot (l-1) - \\mathbb{1}_{l \\text{ even}} \\cdot (2^{r-1}-1)\\right]";
   }
 };
 

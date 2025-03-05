@@ -30,26 +30,29 @@ th {
 }
 
 .formula {
-  margin-bottom: 25px;
+  margin-bottom: 30px;
   background-color: #f8f9fa;
   border-radius: 8px;
-  padding: 20px;
+  padding: 20px 25px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
 }
 
+.formula h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+  color: #333;
+  font-size: 1.3em;
+}
+
 .formulas-container {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.formula h3 {
-  margin-top: 0;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 8px;
 }
 
 h1, h2 {
@@ -187,20 +190,37 @@ tbody td.updated {
 /* LaTeX Formula Styling */
 .latex-formula {
   overflow-x: auto;
-  margin: 10px 0;
-  padding: 10px 0;
+  margin: 15px 0;
+  padding: 15px 0;
   width: 100%;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 /* Ensure KaTeX fonts look good */
 .katex {
-  font-size: 1.1em;
+  font-size: 1.2em;
+  line-height: 1.5;
 }
 
-/* Fix for very long formulas on mobile */
+/* Make long formulas display better */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 5px 0;
+}
+
+/* Fix for very long formulas */
 @media (max-width: 768px) {
   .latex-formula {
     max-width: 100%;
     overflow-x: scroll;
+    padding: 10px 0;
+  }
+
+  .katex {
+    font-size: 1.1em;
   }
 }
