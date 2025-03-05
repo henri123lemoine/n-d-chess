@@ -12,8 +12,6 @@
  *  - "Standard": The knight moves as in standard chess (2 in one axis, 1 in another, 0 elsewhere).
  *  - "Alternative": The knight moves any 3 squares away (Manhattan distance 3), except moves that are "straight"
  *                   (i.e. moves along a single axis).
- *
- * Set DIAGONAL_MODE to "Classic" or "Hyper" and KNIGHT_MODE to "Standard" or "Alternative" as desired.
  */
 
 /**
@@ -61,10 +59,10 @@ calculateKnightAttacks.getFormula = (knightMode) => {
 /**
  * Calculate the maximum number of squares a rook can attack in n dimensions.
  *
- * A rook moves along any single dimension. From a central square on an even board,
- * in each dimension there are sideLength - 1 available moves (the full extent of the axis).
+ * A rook moves along any single dimension. From a central square on a board,
+ * in each dimension there are sideLength - 1 available moves.
  *
- * Formula (for any l): \(d \cdot (l - 1)\)
+ * Formula: d · (l - 1)
  *
  * @param {number} dimension - Number of dimensions.
  * @param {number} sideLength - Side length of the board in each dimension.
@@ -81,11 +79,11 @@ calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d(l-1)';
  *
  * In "Classic" mode:
  *   - The bishop moves diagonally in a 2D subspace (exactly 2 dimensions change by ±1 per step).
- *   - Maximum attack squares formula: C(d, 2) * (2l - 3 + (l % 2))
+ *   - Maximum attack squares formula: C(d, 2) · (2l - 3 + (l % 2))
  *
  * In "Hyper" mode:
  *   - The bishop moves diagonally in any subset of r dimensions (r ≥ 2) uniformly.
- *   - Formula: Sum from r=2 to d of: C(d, r) * [2^(r-1)(l-1) - isEven(l)*(2^(r-1)-1)]
+ *   - Formula: Sum from r=2 to d of: C(d, r) · [2^(r-1)(l-1) - isEven(l)·(2^(r-1)-1)]
  *
  * @param {number} dimension - Number of dimensions.
  * @param {string} diagonalMode - "Classic" or "Hyper".
@@ -94,32 +92,23 @@ calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d(l-1)';
  */
 export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
   if (diagonalMode === 'Classic') {
-    const twoDimMoves = Math.max(0, 2 * sideLength - 3 + (sideLength % 2));
-    return combinatorial(dimension, 2) * twoDimMoves;
+    // Formula handles both odd and even side lengths elegantly
+    return combinatorial(dimension, 2) * (2 * sideLength - 3 + (sideLength % 2));
   } else { // Hyper mode
     let total = 0;
-    if (sideLength >= 2) {
-      for (let r = 2; r <= dimension; r++) {
-        const factor = 1 << (r - 1);
-        const baseMoves = factor * (sideLength - 1);
-        const evenAdjustment = (sideLength % 2 === 0) ? (factor - 1) : 0;
-        total += combinatorial(dimension, r) * (baseMoves - evenAdjustment);
-      }
+    for (let r = 2; r <= dimension; r++) {
+      const factor = 1 << (r - 1);  // Efficient calculation of 2^(r-1)
+      const baseMoves = factor * (sideLength - 1);
+      const evenAdjustment = (sideLength % 2 === 0) ? (factor - 1) : 0;
+      total += combinatorial(dimension, r) * (baseMoves - evenAdjustment);
     }
-
     return Math.round(total);
   }
 };
 
-/**
- * Returns the mathematical formula representation for the given diagonal mode.
- *
- * @param {string} diagonalMode - "Classic" or "Hyper".
- * @returns {string} LaTeX representation of the formula.
- */
 calculateBishopAttacks.getFormula = (diagonalMode) => {
   if (diagonalMode === 'Classic') {
-    return "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2} \\cdot \\max(0, 2l - 3 + (l \\bmod 2))";
+    return "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
   } else {
     return "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1}(l-1) - \\mathbb{1}_{l\\text{ even}}(2^{r-1}-1)\\right]";
   }
@@ -141,15 +130,9 @@ export const calculateQueenAttacks = (dimension, diagonalMode, sideLength) => {
 
 calculateQueenAttacks.getFormula = (diagonalMode) => {
   if (diagonalMode === 'Hyper') {
-    // In Hyper mode, the queen's moves are the union of:
-    //   Rook(d,l) = d(l-1)
-    //   and Bishop_Hyper(d,l) = ∑₍r=2₎ᵈ (C(d,r) * [2^(r-1)(l-1) - 𝟙_{l even}(2^(r-1)-1)])
     return "\\text{Queen}_{\\text{Hyper}}(d, l) = d(l-1) + \\sum_{r=2}^{d} \\binom{d}{r}\\Bigl[2^{r-1}(l-1) - \\mathbb{1}_{\\{l\\,\\mathrm{even}\\}}(2^{r-1}-1)\\Bigr]";
   } else {
-    // Classic mode: queen's moves are computed as rook moves plus bishop moves in 2D subspaces.
-    const rookFormula = calculateRookAttacks.getFormula();
-    const bishopFormula = calculateBishopAttacks.getFormula(diagonalMode);
-    return `\\text{Queen}_{\\text{Classic}}(d, l) = ${rookFormula} + ${bishopFormula}`;
+    return "\\text{Queen}_{\\text{Classic}}(d, l) = d(l-1) + \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
   }
 };
 
@@ -181,8 +164,8 @@ calculateKingAttacks.getFormula = () => '\\text{King}(d, l) = \\min(l, 3)^d - 1'
  * - Hyper mode: Similar to a king, but in one fewer dimension (dimension-1)
  *
  * Formula:
- * - Classic mode: (dimension-1) × min(sideLength-1, 2)
- * - Hyper mode: min(sideLength, 3)^(dimension-1) - 1
+ * - Classic mode: (d-1) · min(l-1, 2)
+ * - Hyper mode: min(l, 3)^(d-1) - 1
  *
  * @param {number} dimension - Number of dimensions (d ≥ 2).
  * @param {string} diagonalMode - "Classic" or "Hyper".
@@ -206,7 +189,7 @@ calculatePawnAttacks.getFormula = (diagonalMode) => {
 };
 
 /**
- * Helper function to calculate combinations (n choose k). (Returns 0 for k>n)
+ * Helper function to calculate combinations (n choose k).
  *
  * @param {number} n
  * @param {number} k
@@ -233,7 +216,7 @@ function factorial(n) {
  *
  * Returns an object with the calculation function and its formula for the given piece.
  *
- * @param {string} pieceName - Name of the chess piece (e.g. "Pawn", "Knight", "Rook", "Bishop", "Queen", "King")
+ * @param {string} pieceName - Name of the chess piece ("Pawn", "Knight", "Rook", "Bishop", "Queen", "King")
  * @param {string} diagonalMode - "Classic" or "Hyper"
  * @param {string} knightMode - "Standard" or "Alternative"
  * @param {number} sideLength - Side length of the board in each dimension.
