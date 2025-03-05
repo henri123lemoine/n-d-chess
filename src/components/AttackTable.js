@@ -123,15 +123,14 @@ const AttackTable = ({ diagonalMode, knightMode, sideLength, onSettingsChange })
         </tbody>
       </table>
 
-      <h2>Scaling Formulas</h2>
-      <p>How the maximum number of attackable squares scales with dimension (d) for a side length of {sideLength}:</p>
+      <h2 className="formulas-heading">Scaling Formulas</h2>
+      <p className="formula-description">How the maximum number of attackable squares scales with dimension (d) for a side length of {sideLength}:</p>
 
       <div className="formulas-container">
         {CHESS_PIECES.map(piece => {
           const pieceInfo = getPieceInfo(piece, diagonalMode, knightMode, sideLength);
           return pieceInfo?.formula ? (
             <div className="formula" key={piece}>
-              <h3>{piece}</h3>
               <LatexFormula formula={pieceInfo.formula} />
             </div>
           ) : null;

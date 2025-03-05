@@ -30,29 +30,51 @@ th {
 }
 
 .formula {
-  margin-bottom: 30px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px 25px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin: 0;
+  background-color: transparent;
+  padding: 2px 8px;
+  box-shadow: none;
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #eee;
+}
+
+.formula:last-child {
+  border-bottom: none;
+}
+
+.formula:nth-child(odd) {
+  background-color: #f8f8f8;
+}
+
+.formula:nth-child(even) {
+  background-color: #ffffff;
 }
 
 .formula h3 {
   margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 10px;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
   color: #333;
-  font-size: 1.3em;
+  font-size: 1em;
+  font-weight: 600;
+  border-bottom: none;
 }
 
 .formulas-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 5px;
+  margin-bottom: 20px;
 }
 
 h1, h2 {
@@ -190,10 +212,10 @@ tbody td.updated {
 /* LaTeX Formula Styling */
 .latex-formula {
   overflow-x: auto;
-  margin: 15px 0;
-  padding: 15px 0;
+  margin: 0;
+  padding: 0;
   width: 100%;
-  min-height: 60px;
+  min-height: 22px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -201,15 +223,16 @@ tbody td.updated {
 
 /* Ensure KaTeX fonts look good */
 .katex {
-  font-size: 1.2em;
-  line-height: 1.5;
+  font-size: 0.95em;
+  line-height: 1.2;
 }
 
 /* Make long formulas display better */
 .katex-display {
+  margin: 0.25em 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 5px 0;
+  padding: 0;
 }
 
 /* Fix for very long formulas */
@@ -217,10 +240,32 @@ tbody td.updated {
   .latex-formula {
     max-width: 100%;
     overflow-x: scroll;
-    padding: 10px 0;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .katex {
-    font-size: 1.1em;
+    font-size: 0.9em;
   }
+
+  .formula {
+    padding: 2px 5px;
+  }
+
+  .formula h3 {
+    font-size: 0.9em;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
+}
+
+.formula-description {
+  margin: 2px 0 4px;
+  font-size: 0.95em;
+  color: #555;
+}
+
+.formulas-heading {
+  margin-top: 20px;
+  margin-bottom: 2px;
 }
