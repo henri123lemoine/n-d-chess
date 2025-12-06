@@ -1,3 +1,4 @@
+/* global BigInt */
 /**
  * Chess Piece Attack Calculators for n-dimensional Chess
  *
@@ -37,9 +38,9 @@ export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
   if (knightMode === 'Standard') {
     // Small boards drop moves; l=3 => 1×base, l=4 => 2×base, l>=5 => 4×base
     if (sideLength < 3) return 0;
-    const base = dimension * (dimension - 1);
-    const multiplier = 1 + (sideLength >= 4) + 2 * (sideLength >= 5);
-    return base * multiplier;
+    const base = BigInt(dimension) * BigInt(dimension - 1);
+    const multiplier = BigInt(1 + (sideLength >= 4) + 2 * (sideLength >= 5));
+    return normalizeResult(base * multiplier);
   } else { // Alternative mode
     // Case 2: Exactly 2 nonzero coordinates (2,1) patterns)
     let case2Multiplier = 0;
@@ -50,16 +51,16 @@ export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
     } else if (sideLength === 3 && dimension === 2) {
       case2Multiplier = 2;
     }
-    const case2Moves = combinatorial(dimension, 2) * case2Multiplier;
+    const case2Moves = combinatorial(dimension, 2) * BigInt(case2Multiplier);
 
     // Case 3: Exactly 3 nonzero coordinates
     let case3Multiplier = 0;
     if (dimension >= 3 && sideLength >= 2) {
       case3Multiplier = (sideLength === 2) ? 1 : 8; // (±1,±1,±1) permutations
     }
-    const case3Moves = combinatorial(dimension, 3) * case3Multiplier;
+    const case3Moves = combinatorial(dimension, 3) * BigInt(case3Multiplier);
 
-    return case2Moves + case3Moves;
+    return normalizeResult(case2Moves + case3Moves);
   }
 };
 
@@ -84,7 +85,7 @@ calculateKnightAttacks.getFormula = (knightMode) => {
  * @returns {number} Maximum number of squares a rook can attack.
  */
 export const calculateRookAttacks = (dimension, sideLength) => {
-  return dimension * (sideLength - 1);
+  return normalizeResult(BigInt(dimension) * BigInt(sideLength - 1));
 };
 
 calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d \\cdot (l-1)';
@@ -108,16 +109,17 @@ calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d \\cdot (l-1)';
 export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
   if (diagonalMode === 'Classic') {
     // Formula handles both odd and even side lengths elegantly
-    return combinatorial(dimension, 2) * (2 * sideLength - 3 + (sideLength % 2));
+    const term = BigInt(2 * sideLength - 3 + (sideLength % 2));
+    return normalizeResult(combinatorial(dimension, 2) * term);
   } else { // Hyper mode
-    let total = 0;
+    let total = 0n;
     for (let r = 2; r <= dimension; r++) {
-      const factor = 1 << (r - 1);  // Efficient calculation of 2^(r-1)
-      const baseMoves = factor * (sideLength - 1);
-      const evenAdjustment = (sideLength % 2 === 0) ? (factor - 1) : 0;
+      const factor = 1n << BigInt(r - 1);  // Efficient calculation of 2^(r-1)
+      const baseMoves = factor * BigInt(sideLength - 1);
+      const evenAdjustment = (sideLength % 2 === 0) ? (factor - 1n) : 0n;
       total += combinatorial(dimension, r) * (baseMoves - evenAdjustment);
     }
-    return Math.round(total);
+    return normalizeResult(total);
   }
 };
 
@@ -140,7 +142,9 @@ calculateBishopAttacks.getFormula = (diagonalMode) => {
  * @returns {number} Maximum number of squares a queen can attack.
  */
 export const calculateQueenAttacks = (dimension, diagonalMode, sideLength) => {
-  return calculateRookAttacks(dimension, sideLength) + calculateBishopAttacks(dimension, diagonalMode, sideLength);
+  const rook = liftToBigInt(calculateRookAttacks(dimension, sideLength));
+  const bishop = liftToBigInt(calculateBishopAttacks(dimension, diagonalMode, sideLength));
+  return normalizeResult(rook + bishop);
 };
 
 calculateQueenAttacks.getFormula = (diagonalMode) => {
@@ -164,7 +168,8 @@ calculateQueenAttacks.getFormula = (diagonalMode) => {
  * @returns {number} Maximum number of squares a king can attack.
  */
 export const calculateKingAttacks = (dimension, sideLength) => {
-  return Math.pow(Math.min(sideLength, 3), dimension) - 1;
+  const result = powBigInt(Math.min(sideLength, 3), dimension) - 1n;
+  return normalizeResult(result);
 };
 
 calculateKingAttacks.getFormula = () => '\\text{King}(d, l) = \\min(l, 3)^d - 1';
@@ -189,9 +194,11 @@ calculateKingAttacks.getFormula = () => '\\text{King}(d, l) = \\min(l, 3)^d - 1'
  */
 export const calculatePawnAttacks = (dimension, diagonalMode, sideLength) => {
   if (diagonalMode === 'Classic') {
-    return (dimension - 1) * Math.min(sideLength - 1, 2);
+    const result = BigInt(dimension - 1) * BigInt(Math.min(sideLength - 1, 2));
+    return normalizeResult(result);
   } else { // Hyper mode
-    return Math.pow(Math.min(sideLength, 3), dimension - 1) - 1;
+    const result = powBigInt(Math.min(sideLength, 3), dimension - 1) - 1n;
+    return normalizeResult(result);
   }
 };
 
@@ -204,26 +211,55 @@ calculatePawnAttacks.getFormula = (diagonalMode) => {
 };
 
 /**
- * Helper function to calculate combinations (n choose k).
+ * Helper function to calculate combinations (n choose k) exactly via BigInt.
  *
  * @param {number} n
  * @param {number} k
- * @returns {number} Combinatorial number: n! / (k!(n-k)!)
+ * @returns {bigint} Combinatorial count
  */
 function combinatorial(n, k) {
-  if (k > n) return 0;
-  return factorial(n) / (factorial(k) * factorial(n - k));
+  if (k > n || k < 0) return 0n;
+  const kEff = Math.min(k, n - k);
+  let result = 1n;
+  for (let i = 1; i <= kEff; i++) {
+    result = (result * BigInt(n - kEff + i)) / BigInt(i);
+  }
+  return result;
 }
 
 /**
- * Helper function to calculate factorial of n.
+ * Integer-safe exponentiation (returns BigInt)
  *
- * @param {number} n
- * @returns {number} n!
+ * @param {number|bigint} base
+ * @param {number} exponent
+ * @returns {bigint}
  */
-function factorial(n) {
-  if (n <= 1) return 1;
-  return n * factorial(n - 1);
+function powBigInt(base, exponent) {
+  let result = 1n;
+  let b = BigInt(base);
+  let e = BigInt(exponent);
+  while (e > 0n) {
+    if (e & 1n) result *= b;
+    b *= b;
+    e >>= 1n;
+  }
+  return result;
+}
+
+// Normalize results: use Number when within safe integer range, otherwise keep BigInt
+const MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
+function normalizeResult(value) {
+  if (typeof value === 'bigint') {
+    const abs = value < 0n ? -value : value;
+    if (abs <= MAX_SAFE_BIGINT) return Number(value);
+    return value;
+  }
+  return value;
+}
+
+// Lift a numeric result (Number or BigInt) to BigInt for safe arithmetic
+function liftToBigInt(value) {
+  return (typeof value === 'bigint') ? value : BigInt(value);
 }
 
 /**
