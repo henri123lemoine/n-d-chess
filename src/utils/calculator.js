@@ -6,23 +6,22 @@
  * from an optimally chosen cell on an l-lengthed d-dimensional board.
  *
  * Two modes for diagonal movement are supported:
- *  - "Classic": Diagonals are defined in the traditional way (moving in exactly 2 dimensions).
- *  - "Hyper":  Diagonals are generalized to any subset (r ≥ 2) of dimensions moving uniformly.
+ *  - "Diagonal": Traditional 2D diagonals (exactly 2 coordinates change equally).
+ *  - "Polyagonal": Generalized r-agonals (any r ≥ 2 coordinates change equally).
  *
- * Additionally, two modes for knight movements are supported:
- *  - "Standard": The knight moves as in standard chess (2 in one axis, 1 in another, 0 elsewhere).
- *  - "Alternative": The knight moves any 3 squares away (Manhattan distance 3), except moves that are "straight"
- *                   (i.e. moves along a single axis).
+ * Two modes for knight movements are supported:
+ *  - "L-shaped": The classic (1,2)-leaper — 2 in one axis, 1 in another.
+ *  - "3-Leaper": Manhattan distance 3, excluding straight-line moves.
  */
 
 /**
  * Calculate the maximum number of squares a knight can attack in n dimensions.
  *
- * For "Standard" mode:
- *   - The knight moves 2 in one coordinate and 1 in another.
+ * For "L-shaped" mode:
+ *   - The knight moves 2 in one coordinate and 1 in another (classic L-shape).
  *   - Formula: [l ≥ 3] · d(d-1) · (1 + 3[l ≥ 5])
  *
- * For "Alternative" mode:
+ * For "3-Leaper" mode:
  *   - The knight moves with Manhattan distance 3, using vectors with |a₁|+⋯+|a_d| = 3,
  *     excluding moves that change only one coordinate.
  *   - Formula:
@@ -30,18 +29,18 @@
  *       [d ≥ 3] · [l ≥ 2] · C(d,3) · (1 + 7[l ≥ 5])
  *
  * @param {number} dimension - Number of dimensions.
- * @param {string} knightMode - "Standard" or "Alternative".
+ * @param {string} knightMode - "L-shaped" or "3-Leaper".
  * @param {number} sideLength - Side length of the board in each dimension.
  * @returns {number} Maximum number of squares a knight can attack.
  */
 export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
-  if (knightMode === 'Standard') {
+  if (knightMode === 'L-shaped') {
     // Small boards drop moves; l=3 => 1×base, l=4 => 2×base, l>=5 => 4×base
     if (sideLength < 3) return 0;
     const base = BigInt(dimension) * BigInt(dimension - 1);
     const multiplier = BigInt(1 + (sideLength >= 4) + 2 * (sideLength >= 5));
     return normalizeResult(base * multiplier);
-  } else { // Alternative mode
+  } else { // 3-Leaper mode
     // Case 2: Exactly 2 nonzero coordinates (2,1) patterns)
     let case2Multiplier = 0;
     if (sideLength >= 5) {
@@ -65,10 +64,10 @@ export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
 };
 
 calculateKnightAttacks.getFormula = (knightMode) => {
-  if (knightMode === 'Standard') {
-    return "\\text{Knight}_{\\text{Standard}}(d, l) = \\mathbb{1}_{l \\geq 3} \\cdot d(d-1) \\cdot \\big(1 + \\mathbb{1}_{l \\geq 4} + 2\\,\\mathbb{1}_{l \\geq 5}\\big)";
+  if (knightMode === 'L-shaped') {
+    return "\\text{Knight}_{\\text{L}}(d, l) = \\mathbb{1}_{l \\geq 3} \\cdot d(d-1) \\cdot \\big(1 + \\mathbb{1}_{l \\geq 4} + 2\\,\\mathbb{1}_{l \\geq 5}\\big)";
   } else {
-    return "\\text{Knight}_{\\text{Alternative}}(d, l) = \\binom{d}{2} \\cdot \\big(2\\,\\mathbb{1}_{l = 3}\\,\\mathbb{1}_{d = 2} + 4\\,\\mathbb{1}_{l = 4} + 8\\,\\mathbb{1}_{l \\geq 5}\\big) + \\binom{d}{3} \\cdot \\big(\\mathbb{1}_{l = 2} + 8\\,\\mathbb{1}_{l \\geq 3}\\big)";
+    return "\\text{Knight}_{\\text{3-Leap}}(d, l) = \\binom{d}{2} \\cdot \\big(2\\,\\mathbb{1}_{l = 3}\\,\\mathbb{1}_{d = 2} + 4\\,\\mathbb{1}_{l = 4} + 8\\,\\mathbb{1}_{l \\geq 5}\\big) + \\binom{d}{3} \\cdot \\big(\\mathbb{1}_{l = 2} + 8\\,\\mathbb{1}_{l \\geq 3}\\big)";
   }
 };
 
@@ -93,25 +92,25 @@ calculateRookAttacks.getFormula = () => '\\text{Rook}(d, l) = d \\cdot (l-1)';
 /**
  * Calculate the maximum number of squares a bishop can attack in n dimensions.
  *
- * In "Classic" mode:
+ * In "Diagonal" mode:
  *   - The bishop moves diagonally in a 2D subspace (exactly 2 dimensions change by ±1 per step).
  *   - Maximum attack squares formula: C(d, 2) · (2l - 3 + (l % 2))
  *
- * In "Hyper" mode:
- *   - The bishop moves diagonally in any subset of r dimensions (r ≥ 2) uniformly.
+ * In "Polyagonal" mode:
+ *   - The bishop moves along any r-agonal (r ≥ 2 dimensions change uniformly).
  *   - Formula: Sum from r=2 to d of: C(d, r) · [2^(r-1)(l-1) - isEven(l)·(2^(r-1)-1)]
  *
  * @param {number} dimension - Number of dimensions.
- * @param {string} diagonalMode - "Classic" or "Hyper".
+ * @param {string} diagonalMode - "Diagonal" or "Polyagonal".
  * @param {number} sideLength - Side length of the board in each dimension.
  * @returns {number} Maximum number of squares a bishop can attack.
  */
 export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
-  if (diagonalMode === 'Classic') {
+  if (diagonalMode === 'Diagonal') {
     // Formula handles both odd and even side lengths elegantly
     const term = BigInt(2 * sideLength - 3 + (sideLength % 2));
     return normalizeResult(combinatorial(dimension, 2) * term);
-  } else { // Hyper mode
+  } else { // Polyagonal mode
     let total = 0n;
     for (let r = 2; r <= dimension; r++) {
       const factor = 1n << BigInt(r - 1);  // Efficient calculation of 2^(r-1)
@@ -124,10 +123,10 @@ export const calculateBishopAttacks = (dimension, diagonalMode, sideLength) => {
 };
 
 calculateBishopAttacks.getFormula = (diagonalMode) => {
-  if (diagonalMode === 'Classic') {
-    return "\\text{Bishop}_{\\text{Classic}}(d, l) = \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
+  if (diagonalMode === 'Diagonal') {
+    return "\\text{Bishop}_{\\text{Diag}}(d, l) = \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
   } else {
-    return "\\text{Bishop}_{\\text{Hyper}}(d, l) = \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1} \\cdot (l-1) - \\mathbb{1}_{l \\text{ even}} \\cdot (2^{r-1}-1)\\right]";
+    return "\\text{Bishop}_{\\text{Poly}}(d, l) = \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1} \\cdot (l-1) - \\mathbb{1}_{l \\text{ even}} \\cdot (2^{r-1}-1)\\right]";
   }
 };
 
@@ -137,7 +136,7 @@ calculateBishopAttacks.getFormula = (diagonalMode) => {
  * The queen's moves are the union of the rook and bishop moves.
  *
  * @param {number} dimension - Number of dimensions.
- * @param {string} diagonalMode - Mode for bishop moves ("Classic" or "Hyper").
+ * @param {string} diagonalMode - Mode for bishop moves ("Diagonal" or "Polyagonal").
  * @param {number} sideLength - Side length of the board in each dimension.
  * @returns {number} Maximum number of squares a queen can attack.
  */
@@ -148,10 +147,10 @@ export const calculateQueenAttacks = (dimension, diagonalMode, sideLength) => {
 };
 
 calculateQueenAttacks.getFormula = (diagonalMode) => {
-  if (diagonalMode === 'Classic') {
-    return "\\text{Queen}_{\\text{Classic}}(d, l) = d \\cdot (l-1) + \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
+  if (diagonalMode === 'Diagonal') {
+    return "\\text{Queen}_{\\text{Diag}}(d, l) = d \\cdot (l-1) + \\binom{d}{2} \\cdot (2l - 3 + (l \\bmod 2))";
   } else {
-    return "\\text{Queen}_{\\text{Hyper}}(d, l) = d \\cdot (l-1) + \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1} \\cdot (l-1) - \\mathbb{1}_{l \\text{ even}} \\cdot (2^{r-1}-1)\\right]";
+    return "\\text{Queen}_{\\text{Poly}}(d, l) = d \\cdot (l-1) + \\sum_{r=2}^{d} \\binom{d}{r} \\cdot \\left[2^{r-1} \\cdot (l-1) - \\mathbb{1}_{l \\text{ even}} \\cdot (2^{r-1}-1)\\right]";
   }
 };
 
@@ -180,33 +179,33 @@ calculateKingAttacks.getFormula = () => '\\text{King}(d, l) = \\min(l, 3)^d - 1'
  * The pawn moves "forward" along the first coordinate and attacks diagonally.
  * In each remaining dimension, the pawn's attack pattern depends on the mode:
  *
- * - Classic mode: Each dimension beyond the first contributes min(sideLength-1, 2) attack squares
- * - Hyper mode: Similar to a king, but in one fewer dimension (dimension-1)
+ * - Diagonal mode: Each dimension beyond the first contributes min(sideLength-1, 2) attack squares
+ * - Polyagonal mode: Similar to a king, but in one fewer dimension (dimension-1)
  *
  * Formula:
- * - Classic mode: (d-1) · min(l-1, 2)
- * - Hyper mode: min(l, 3)^(d-1) - 1
+ * - Diagonal mode: (d-1) · min(l-1, 2)
+ * - Polyagonal mode: min(l, 3)^(d-1) - 1
  *
  * @param {number} dimension - Number of dimensions (d ≥ 2).
- * @param {string} diagonalMode - "Classic" or "Hyper".
+ * @param {string} diagonalMode - "Diagonal" or "Polyagonal".
  * @param {number} sideLength - Side length of the board in each dimension.
  * @returns {number} Maximum number of squares a pawn can attack.
  */
 export const calculatePawnAttacks = (dimension, diagonalMode, sideLength) => {
-  if (diagonalMode === 'Classic') {
+  if (diagonalMode === 'Diagonal') {
     const result = BigInt(dimension - 1) * BigInt(Math.min(sideLength - 1, 2));
     return normalizeResult(result);
-  } else { // Hyper mode
+  } else { // Polyagonal mode
     const result = powBigInt(Math.min(sideLength, 3), dimension - 1) - 1n;
     return normalizeResult(result);
   }
 };
 
 calculatePawnAttacks.getFormula = (diagonalMode) => {
-  if (diagonalMode === 'Classic') {
-    return "\\text{Pawn}_{\\text{Classic}}(d, l) = (d-1) \\cdot \\min(l-1, 2)";
+  if (diagonalMode === 'Diagonal') {
+    return "\\text{Pawn}_{\\text{Diag}}(d, l) = (d-1) \\cdot \\min(l-1, 2)";
   } else {
-    return "\\text{Pawn}_{\\text{Hyper}}(d, l) = \\min(l, 3)^{d-1} - 1";
+    return "\\text{Pawn}_{\\text{Poly}}(d, l) = \\min(l, 3)^{d-1} - 1";
   }
 };
 
@@ -268,12 +267,12 @@ function liftToBigInt(value) {
  * Returns an object with the calculation function and its formula for the given piece.
  *
  * @param {string} pieceName - Name of the chess piece ("Pawn", "Knight", "Rook", "Bishop", "Queen", "King")
- * @param {string} diagonalMode - "Classic" or "Hyper"
- * @param {string} knightMode - "Standard" or "Alternative"
+ * @param {string} diagonalMode - "Diagonal" or "Polyagonal"
+ * @param {string} knightMode - "L-shaped" or "3-Leaper"
  * @param {number} sideLength - Side length of the board in each dimension.
  * @returns {object|null} Object with keys "calculate" and "formula", or null if not found.
  */
-export const getPieceInfo = (pieceName, diagonalMode = 'Hyper', knightMode = 'Alternative', sideLength = 8) => {
+export const getPieceInfo = (pieceName, diagonalMode = 'Polyagonal', knightMode = '3-Leaper', sideLength = 8) => {
   const pieces = {
     'Pawn': {
       calculate: (dimension) => calculatePawnAttacks(dimension, diagonalMode, sideLength),

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getPieceInfo } from '../utils/calculator.js';
+import { DIAGONAL_MODE_LIST, KNIGHT_MODE_LIST } from '../utils/movementModes.js';
 import LatexFormula from './LatexFormula.js';
 
 const DIMENSIONS = [1, 2, 3, 4, 5, 6, 7, 10, 20, 50];
@@ -74,12 +75,14 @@ const AttackTable = ({ diagonalMode, knightMode, sideLength, onSettingsChange })
             value={diagonalMode}
             onChange={handleDiagonalModeChange}
           >
-            <option value="Classic">Classic (2D diagonals only)</option>
-            <option value="Hyper">Hyper (n-dimensional diagonals)</option>
+            {DIAGONAL_MODE_LIST.map(mode => (
+              <option key={mode.value} value={mode.value}>{mode.label}</option>
+            ))}
           </select>
           <p className="setting-description">
-            Classic: Pieces can only move along traditional 2D diagonals.<br/>
-            Hyper: Pieces can move along diagonals in any number of dimensions simultaneously.
+            {DIAGONAL_MODE_LIST.map((mode, i) => (
+              <span key={mode.value}>{mode.value}: {mode.description}{i < DIAGONAL_MODE_LIST.length - 1 && <br/>}</span>
+            ))}
           </p>
         </div>
 
@@ -90,12 +93,14 @@ const AttackTable = ({ diagonalMode, knightMode, sideLength, onSettingsChange })
             value={knightMode}
             onChange={handleKnightModeChange}
           >
-            <option value="Standard">Standard (2D knight moves)</option>
-            <option value="Alternative">Alternative (3D knight moves)</option>
+            {KNIGHT_MODE_LIST.map(mode => (
+              <option key={mode.value} value={mode.value}>{mode.label}</option>
+            ))}
           </select>
           <p className="setting-description">
-            Standard: Knights move as in traditional chess (2 in one direction, 1 in another).<br/>
-            Alternative: Knights can move at any distance 3 that isn't straight (Manhattan distance).
+            {KNIGHT_MODE_LIST.map((mode, i) => (
+              <span key={mode.value}>{mode.value}: {mode.description}{i < KNIGHT_MODE_LIST.length - 1 && <br/>}</span>
+            ))}
           </p>
         </div>
       </div>

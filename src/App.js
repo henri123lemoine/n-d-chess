@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import AttackTable from './components/AttackTable.js';
+import { DEFAULT_DIAGONAL_MODE, DEFAULT_KNIGHT_MODE, DEFAULT_SIDE_LENGTH } from './utils/movementModes.js';
 
 function App() {
   // State for chess movement settings
   const [settings, setSettings] = useState({
-    diagonalMode: 'Hyper', // Default to n-dimensional diagonals
-    knightMode: 'Alternative', // Default to alternative knight movement
-    sideLength: 8 // Default board size is 8×8×...×8
+    diagonalMode: DEFAULT_DIAGONAL_MODE,
+    knightMode: DEFAULT_KNIGHT_MODE,
+    sideLength: DEFAULT_SIDE_LENGTH
   });
 
   // Handler to update settings
