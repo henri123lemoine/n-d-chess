@@ -5,6 +5,8 @@
  * by checking against known values from traditional chess.
  */
 
+import { getPieceInfo } from './calculator.js';
+
 // Known values for pieces in the center of a standard 2D board
 export const known2DValues = {
   'Knight': 8,    // Knight attacks 8 squares in 2D
@@ -65,6 +67,27 @@ export const runTests = (calculators) => {
     pass: calculators['Pawn'].calculate(2) === 2,
   });
 
+  const smallKnightCases = [
+    { test: 'Knight Standard 2D l=3', dimension: 2, sideLength: 3, knightMode: 'Standard', expected: 2 },
+    { test: 'Knight Standard 2D l=4', dimension: 2, sideLength: 4, knightMode: 'Standard', expected: 4 },
+    { test: 'Knight Standard 3D l=4', dimension: 3, sideLength: 4, knightMode: 'Standard', expected: 12 },
+    { test: 'Knight Alternative 2D l=3', dimension: 2, sideLength: 3, knightMode: 'Alternative', expected: 2 },
+    { test: 'Knight Alternative 2D l=4', dimension: 2, sideLength: 4, knightMode: 'Alternative', expected: 4 },
+    { test: 'Knight Alternative 3D l=3', dimension: 3, sideLength: 3, knightMode: 'Alternative', expected: 8 },
+    { test: 'Knight Alternative 3D l=4', dimension: 3, sideLength: 4, knightMode: 'Alternative', expected: 20 },
+  ];
+
+  smallKnightCases.forEach(({ test, dimension, sideLength, knightMode, expected }) => {
+    const knight = getPieceInfo('Knight', 'Hyper', knightMode, sideLength);
+    const actual = knight.calculate(dimension);
+    results.push({
+      test,
+      expected,
+      actual,
+      pass: actual === expected,
+    });
+  });
+
   // Test that all values for dimensions 2-10 are non-negative
   const PIECES = ['Knight', 'Rook', 'Bishop', 'Queen', 'King', 'Pawn'];
   const DIMENSIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -107,16 +130,16 @@ export const runTests = (calculators) => {
 
       if (nextValue <= currentValue) {
         results.push({
-          test: `${piece} dimension increase ${d}→${d+1}`,
-          expected: `${d+1}D > ${d}D`,
+          test: `${piece} dimension increase ${d}→${d + 1}`,
+          expected: `${d + 1}D > ${d}D`,
           actual: `${nextValue} <= ${currentValue}`,
           pass: false,
-          message: `${piece} in ${d+1}D (${nextValue}) should attack more squares than in ${d}D (${currentValue})`
+          message: `${piece} in ${d + 1}D (${nextValue}) should attack more squares than in ${d}D (${currentValue})`
         });
       } else {
         results.push({
-          test: `${piece} dimension increase ${d}→${d+1}`,
-          expected: `${d+1}D > ${d}D`,
+          test: `${piece} dimension increase ${d}→${d + 1}`,
+          expected: `${d + 1}D > ${d}D`,
           actual: `${nextValue} > ${currentValue}`,
           pass: true,
           message: `${piece} attacks more squares as dimensions increase`

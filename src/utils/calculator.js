@@ -35,14 +35,29 @@
  */
 export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
   if (knightMode === 'Standard') {
-    // Standard knight formula without conditionals
-    return (sideLength >= 3) * dimension * (dimension - 1) * (1 + 3 * (sideLength >= 5));
+    // Small boards drop moves; l=3 => 1×base, l=4 => 2×base, l>=5 => 4×base
+    if (sideLength < 3) return 0;
+    const base = dimension * (dimension - 1);
+    const multiplier = 1 + (sideLength >= 4) + 2 * (sideLength >= 5);
+    return base * multiplier;
   } else { // Alternative mode
-    // Case 2: Exactly 2 nonzero coordinates
-    const case2Moves = (sideLength >= 3) * combinatorial(dimension, 2) * (2 + 6 * (sideLength >= 5));
+    // Case 2: Exactly 2 nonzero coordinates (2,1) patterns)
+    let case2Multiplier = 0;
+    if (sideLength >= 5) {
+      case2Multiplier = 8;
+    } else if (sideLength === 4) {
+      case2Multiplier = 4;
+    } else if (sideLength === 3 && dimension === 2) {
+      case2Multiplier = 2;
+    }
+    const case2Moves = combinatorial(dimension, 2) * case2Multiplier;
 
     // Case 3: Exactly 3 nonzero coordinates
-    const case3Moves = (dimension >= 3) * (sideLength >= 2) * combinatorial(dimension, 3) * (1 + 7 * (sideLength >= 5));
+    let case3Multiplier = 0;
+    if (dimension >= 3 && sideLength >= 2) {
+      case3Multiplier = (sideLength === 2) ? 1 : 8; // (±1,±1,±1) permutations
+    }
+    const case3Moves = combinatorial(dimension, 3) * case3Multiplier;
 
     return case2Moves + case3Moves;
   }
@@ -50,9 +65,9 @@ export const calculateKnightAttacks = (dimension, knightMode, sideLength) => {
 
 calculateKnightAttacks.getFormula = (knightMode) => {
   if (knightMode === 'Standard') {
-    return "\\text{Knight}_{\\text{Standard}}(d, l) = \\mathbb{1}_{l \\geq 3} \\cdot d(d-1) \\cdot (1 + 3 \\cdot \\mathbb{1}_{l \\geq 5})";
+    return "\\text{Knight}_{\\text{Standard}}(d, l) = \\mathbb{1}_{l \\geq 3} \\cdot d(d-1) \\cdot \\big(1 + \\mathbb{1}_{l \\geq 4} + 2\\,\\mathbb{1}_{l \\geq 5}\\big)";
   } else {
-    return "\\text{Knight}_{\\text{Alternative}}(d, l) = \\mathbb{1}_{l \\geq 3} \\cdot \\binom{d}{2} \\cdot (2 + 6 \\cdot \\mathbb{1}_{l \\geq 5}) + \\mathbb{1}_{d \\geq 3} \\cdot \\mathbb{1}_{l \\geq 2} \\cdot \\binom{d}{3} \\cdot (1 + 7 \\cdot \\mathbb{1}_{l \\geq 5})";
+    return "\\text{Knight}_{\\text{Alternative}}(d, l) = \\binom{d}{2} \\cdot \\big(2\\,\\mathbb{1}_{l = 3}\\,\\mathbb{1}_{d = 2} + 4\\,\\mathbb{1}_{l = 4} + 8\\,\\mathbb{1}_{l \\geq 5}\\big) + \\binom{d}{3} \\cdot \\big(\\mathbb{1}_{l = 2} + 8\\,\\mathbb{1}_{l \\geq 3}\\big)";
   }
 };
 
